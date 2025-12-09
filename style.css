@@ -42,8 +42,9 @@
 .ct-header-account .ct-account-item[data-trigger="modal"] a {pointer-events: auto;}
 
 .spa-icon {max-height: 24px; width: auto; height: auto;vertical-align: middle;}
-zašleme fak., 
-h2 .spa-icon { width: 32px; height: 32px;}
+h2 .spa-icon { width: 32px; height: 32px !important; display:inline-block;}
+h2.hndle .spa-icon { width: 32px; height: 32px !important; display:inline-block;}
+
 /* Sociálne siete - formulár */
 .spa-social-inputs {display: flex;flex-direction: column;gap: 10px;}
 .spa-social-input {display: flex;align-items: center;gap: 10px;}
