@@ -1,0 +1,84 @@
+/**
+ * Theme Name: SPA
+ * Description: SPA - Blocksy PRO Child theme
+ * Author: Artefactum
+ * Author URI: https://artefactum.sk
+ * Description: fast, modern, smart theme.
+ * Template: blocksy
+ * Text Domain: spa
+ * Version: 2025
+ * License: Commercial License
+ */
+
+/* SPA colors
+--theme-palette-color-1: #0066FF; Olympic blue
+--theme-palette-color-2: #00C853; Olympic green
+--theme-palette-color-3: #FF1439; Olympic red
+--theme-palette-color-4: #FFB81C; Olympis yellow
+--theme-palette-color-5: #000000; Olympis black
+--theme-palette-color-6: #f2f5f7; Color 6 - light grey
+--theme-palette-color-7: #FAFBFC; Color 7 - smart grey
+--theme-palette-color-8: #ffffff; Color 8 - white
+--theme-palette-color-9: #A7E9E9; Kid color1 - tyrkys
+--theme-palette-color-10: #E3F2FD; Kid color2 - pastel blue
+--theme-palette-color-11: #87C9FF; Kid color3 - light blue
+--theme-palette-color-12: #FF9AA2; Kids color4 - pinky
+--theme-palette-color-13: #a855f7; Kids color5 - lila
+*/
+
+:root {
+  --gf-form-validation-heading-color: #F42E17 !important;
+  --gf-ctrl-label-color-req: #F42E17 !important;
+  --gf-color-danger: #F42E17 !important;
+  --gf-form-validation-border-color: rgba (244, 46, 23,.3) !important;
+}
+
+[data-sticky*="yes"] .site-title-container {display: none;}
+
+/* Skryt Blocksy nativny login modal */
+.ct-header-account .ct-account-modal,.ct-header-account[data-interaction="dropdown"] .ct-account-dropdown,#account-modal,.ct-account-form {display: none !important;}
+/* Zabranenie otvorenia modalu */
+.ct-header-account .ct-account-item[data-trigger="modal"] {pointer-events: none;}
+.ct-header-account .ct-account-item[data-trigger="modal"] a {pointer-events: auto;}
+
+.spa-icon {max-height: 24px; width: auto; height: auto;vertical-align: middle;}
+zašleme fak., 
+h2 .spa-icon { width: 32px; height: 32px;}
+/* Sociálne siete - formulár */
+.spa-social-inputs {display: flex;flex-direction: column;gap: 10px;}
+.spa-social-input {display: flex;align-items: center;gap: 10px;}
+.spa-social-input input {flex: 1;}
+.spa-icon-input {width: 24px;height: 24px;flex-shrink: 0;}
+/* Sociálne siete - karta */
+.spa-trainer-social {display: flex;justify-content: center;gap: 12px;margin-top: 15px;padding-top: 15px;border-top: 1px solid #eee;}
+.spa-trainer-social a {display: flex;align-items: center;justify-content: center;width: 36px;height: 36px;border-radius: 50%;background: #f5f5f5;transition: all 0.2s;}
+.spa-trainer-social a:hover {background: var(--theme-palette-color-1, #0072CE);transform: scale(1.1);}
+.spa-trainer-social a:hover .spa-icon {filter: brightness(0) invert(1);}
+.spa-trainer-social .spa-icon {width: 20px;height: 20px;}
+
+
+/* GravityForms */
+.gform-theme input:is([type=submit],[type=button],[type=reset]){background: linear-gradient(135deg, var(--theme-palette-color-1) 0%, #005BAA 100%);padding: 16px 32px !important;border-radius: 10px !important; text-decoration: none !important;font-weight: 700 !important;font-size: 16px !important;transition: all 0.3s ease !important; box-shadow: 0 4px 12px rgba(0, 114, 206, 0.3) !important;color:#fff !important;border:unset !important;}
+.gform-theme input:is([type=submit],[type=button],[type=reset]):hover{background: linear-gradient(135deg, var(--theme-palette-color-3) 0%, #C40025 100%) !important;transform: translateY(-2px) !important;box-shadow: 0 6px 20px rgba(228, 0, 43, .4) !important;}
+.gform-theme .gfield_required,.gform-theme .validation_message,.gform-theme--framework .gform_validation_errors .gform_submission_error {color: #F42E17 !important;}
+.gfield_error input[type]:where(:not(.gform-text-input-reset):not([type=hidden])):where(:not(.gform-theme__disable):not(.gform-theme__disable *):not(.gform-theme__disable-framework):not(.gform-theme__disable-framework *)),.gform-theme .gform_validation_errors{border-color: #F42E17 !important;}
+select::placeholder, textarea::placeholder, input:is([type="url"], [type="tel"], [type="text"], [type="time"], [type="date"], [type="datetime"], [type="datetime-local"], [type="email"], [type="number"], [type="search"], [type="password"])::placeholder, .ct-pseudo-input::placeholder, fieldset .wc-stripe-elements-field::placeholder, .ff-inherit-theme-style .ff-el-form-control:not([size]):not([multiple])::placeholder{opacity: .3 !important;}
+
+
+
+@media (max-width: 767px) {
+.spa-login-form h2{font-size: 150%;}
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+}
+
+
+@media screen and (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+
+}
+
+
+@media screen and (min-width: 900px) and (max-width: 1200px) {
+}
+
