@@ -574,3 +574,126 @@ function spa_save_hall_block_meta($post_id) {
     $show = isset($_POST['show_on_calendar']) ? '1' : '0';
     update_post_meta($post_id, 'show_on_calendar', $show);
 }
+
+// Vlastné stĺpce v admin liste registrácií
+add_filter('manage_spa_registration_posts_columns', 'spa_registration_columns');
+function spa_registration_columns($columns) {
+    return [
+        'cb' => $columns['cb'],
+        'title' => 'Názov',
+        'child' => '👶 Dieťa',
+        'program' => '🏋️ Program',
+        'parent' => '👨‍👩‍👧 Rodič',
+        'vs' => 'VS',
+        'status' => 'Status',
+        'date' => 'Dátum'
+    ];
+}
+
+// Naplň stĺpce dátami
+add_action('manage_spa_registration_posts_custom_column', 'spa_registration_column_content', 10, 2);
+function spa_registration_column_content($column, $post_id) {
+    switch($column) {
+        case 'child':
+            $child_id = get_post_meta($post_id, 'child_user_id', true);
+            if($child_id) {
+                $child = get_userdata($child_id);
+                echo $child->first_name . ' ' . $child->last_name;
+            }
+            break;
+            
+        case 'program':
+            $program_id = get_post_meta($post_id, 'program_id', true);
+            if($program_id) {
+                echo get_the_title($program_id);
+            }
+            break;
+            
+        case 'parent':
+            $parent_id = get_post_meta($post_id, 'parent_user_id', true);
+            if($parent_id) {
+                $parent = get_userdata($parent_id);
+                echo $parent->user_email;
+            }
+            break;
+            
+        case 'vs':
+            $child_id = get_post_meta($post_id, 'child_user_id', true);
+            if($child_id) {
+                echo get_user_meta($child_id, 'variabilny_symbol', true);
+            }
+            break;
+            
+        case 'status':
+            $status = get_post_meta($post_id, 'status', true);
+            $labels = [
+                'pending' => '⏳ Čaká',
+                'approved' => '✅ Schválené',
+                'active' => '🟢 Aktívne',
+                'cancelled' => '❌ Zrušené'
+            ];
+            echo $labels[$status] ?? $status;
+            break;
+    }
+}
+
+add_action('add_meta_boxes', 'spa_registration_meta_boxes');
+function spa_registration_meta_boxes() {
+    add_meta_box(
+        'spa_registration_details',
+        '📋 Detaily registrácie',
+        'spa_registration_details_callback',
+        'spa_registration',
+        'normal',
+        'high'
+    );
+}
+
+function spa_registration_details_callback($post) {
+    $child_id = get_post_meta($post->ID, 'child_user_id', true);
+    $program_id = get_post_meta($post->ID, 'program_id', true);
+    $parent_id = get_post_meta($post->ID, 'parent_user_id', true);
+    $status = get_post_meta($post->ID, 'status', true);
+    
+    // Zobraz pekné rozhranie
+    ?>
+    <table class="form-table">
+        <tr>
+            <th>Dieťa:</th>
+            <td><?php 
+                if($child_id) {
+                    $child = get_userdata($child_id);
+                    echo $child->first_name . ' ' . $child->last_name;
+                    echo ' (VS: ' . get_user_meta($child_id, 'variabilny_symbol', true) . ')';
+                }
+            ?></td>
+        </tr>
+        <tr>
+            <th>Program:</th>
+            <td><?php echo $program_id ? get_the_title($program_id) : '—'; ?></td>
+        </tr>
+        <tr>
+            <th>Rodič:</th>
+            <td><?php 
+                if($parent_id) {
+                    $parent = get_userdata($parent_id);
+                    echo $parent->display_name . '<br>';
+                    echo '📧 ' . $parent->user_email . '<br>';
+                    echo '📱 ' . get_user_meta($parent_id, 'phone', true);
+                }
+            ?></td>
+        </tr>
+        <tr>
+            <th>Status:</th>
+            <td>
+                <select name="spa_reg_status">
+                    <option value="pending" <?php selected($status, 'pending'); ?>>⏳ Čaká na schválenie</option>
+                    <option value="approved" <?php selected($status, 'approved'); ?>>✅ Schválené</option>
+                    <option value="active" <?php selected($status, 'active'); ?>>🟢 Aktívne</option>
+                    <option value="cancelled" <?php selected($status, 'cancelled'); ?>>❌ Zrušené</option>
+                </select>
+            </td>
+        </tr>
+    </table>
+    <?php
+}
