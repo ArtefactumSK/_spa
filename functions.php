@@ -3,7 +3,7 @@
  * Theme Name: Blocksy Child - Samuel Piasecký ACADEMY
  * Description: Child theme pre Samuel Piasecký ACADEMY s kompletným training management systémom
  * Author: Artefactum
- * Version: 1.0.0
+ * Version: 26.1.0
  */
 
 if (!defined('ABSPATH')) {
@@ -159,7 +159,7 @@ if (is_admin()) {
    ZÁKLADNÉ KONŠTANTY
    ========================== */
 
-define('SPA_VERSION', '1.0.0');
+define('SPA_VERSION', '26.1.0');
 define('SPA_PATH', get_stylesheet_directory());
 define('SPA_URL', get_stylesheet_directory_uri());
 define('SPA_INCLUDES', SPA_PATH . '/includes/');
@@ -262,7 +262,7 @@ if (defined('WP_DEBUG') && WP_DEBUG && current_user_can('administrator')) {
 add_action('wp_dashboard_setup', function() {
     wp_add_dashboard_widget(
         'spa_system_status',
-        '<span class="spa-icon-wrapper">' . spa_icon('spa-icon') . '</span> Samuel Piasecký ACADEMY - Stav systému',
+        '<svg class="spa-icon" width="39" height="39" viewBox="12 12 36 76" style="vertical-align: bottom;display: inline-block;"><path d="M36.29,0C-3.91,29.7.49,65.3,32.79,69.8-1.91,69-20.51,38.3,36.29,0Z" fill="var(--theme-palette-color-1, #FF1439)"></path><path d="M16.99,60.2c2.5,1.8,5.1,1.8,5.6-.2s-1.1-5.1-3.7-7-5.1-1.8-5.6.2,1.1,5.1,3.7,7Z" fill="var(--theme-palette-color-1, #FF1439)"></path><path d="M16.49,92.4c40.2-29.7,35.8-65.3,3.5-69.8,34.7.8,53.3,31.5-3.5,69.8Z" fill="var(--theme-palette-color-3, #ff1439)"></path><path d="M48.39,30.5c2.6,1.9,5.1,1.8,5.6-.2s-1.1-5.1-3.7-7-5.1-1.8-5.6.2,1.1,5.1,3.7,7Z" fill="var(--theme-palette-color-3, #ff1439)"></path></svg> Samuel Piasecký ACADEMY - Stav systému',
         function() {
             ?>
             <div style="padding: 12px;">
