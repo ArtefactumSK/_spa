@@ -262,7 +262,7 @@ if (defined('WP_DEBUG') && WP_DEBUG && current_user_can('administrator')) {
 add_action('wp_dashboard_setup', function() {
     wp_add_dashboard_widget(
         'spa_system_status',
-       spa_icon('spa-icon').' Samuel Piasecký ACADEMY - Stav systému',
+        '<span class="spa-icon-wrapper">' . spa_icon('spa-icon') . '</span> Samuel Piasecký ACADEMY - Stav systému',
         function() {
             ?>
             <div style="padding: 12px;">
