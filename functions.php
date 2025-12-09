@@ -266,8 +266,8 @@ add_action('wp_dashboard_setup', function() {
         function() {
             ?>
             <div style="padding: 12px;">
-                <p><strong>Verzia:</strong> <?php echo SPA_VERSION; ?></p>
-                <p><strong>Načítané moduly:</strong> 
+                <p><strong>Verzia:</strong> <?php echo SPA_VERSION; ?><br>
+                <strong>Načítané moduly:</strong> 
                     <?php 
                     $loaded = array_filter(glob(SPA_INCLUDES . '*.php'));
                     echo count($loaded); 
