@@ -11,15 +11,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-/**
- * URL systémovej ikony
- */
-function spa_icon($name, $class = 'spa-icon') {
-    $url = content_url('/uploads/spa-icons/system/' . $name . '.svg');
-    return '<img src="' . esc_url($url) . '" class="' . esc_attr($class) . '" alt="">';
-}
-
-
 /* ==========================
    ROLE: Registrácia spa_trainer
    ========================== */
