@@ -293,42 +293,100 @@ function spa_process_import() {
    DETECT COLUMNS - Paysy.app štruktúra
    ========================== */
 
+
 function spa_detect_columns($headers) {
     
-    // Fixné indexy pre Paysy.app export
+    // OPRAVENÉ indexy podľa skutočného CSV
     $map = [
-        'member_firstname' => 0,
-        'member_lastname' => 1,
-        'member_email' => 2,
-        'member_phone' => 3,
-        'member_birthdate' => 4,
-        'rodne_cislo' => 5,
-        'variabilny_symbol' => 8,
-        'stav' => 30,
-        'parent_email' => 31,
-        'parent_firstname' => 32,
-        'parent_lastname' => 33,
-        'parent_phone' => 34,
-        'address_street' => 36,
-        'address_psc' => 37,
-        'address_city' => 38,
+        // DIEŤA / ČLEN
+        'member_firstname'   => 0,   // Meno
+        'member_lastname'    => 1,   // Priezvisko
+        'member_email'       => 2,   // Email (zvyčajne prázdny pre deti)
+        'member_phone'       => 3,   // Tel. číslo
+        'member_birthdate'   => 4,   // Dátum narodenia
+        'rodne_cislo'        => 5,   // Rodné číslo
+        'variabilny_symbol'  => 8,   // Variabilný symbol
+        
+        // RODIČ (stĺpce 30-37)
+        'stav'               => 29,  // Stav
+        'parent_email'       => 30,  // Email rodiča
+        'parent_firstname'   => 31,  // Meno rodiča
+        'parent_lastname'    => 32,  // Priezvisko rodiča
+        'parent_phone'       => 33,  // Tel. číslo rodiča
+        // index 34 = Adresa (prázdne)
+        'address_street'     => 35,  // Ulica Číslo
+        'address_psc'        => 36,  // PSČ
+        'address_city'       => 37,  // Mesto
     ];
     
     return $map;
 }
 
 /* ==========================
-   MAP ROW DATA
+   MAP ROW DATA - s opravou Excel exponenciálneho formátu
    ========================== */
 
 function spa_map_row_data($row, $column_map) {
     $data = [];
     
     foreach ($column_map as $field => $idx) {
-        $data[$field] = isset($row[$idx]) ? trim($row[$idx]) : '';
+        $value = isset($row[$idx]) ? trim($row[$idx]) : '';
+        $data[$field] = $value;
     }
     
+    // FIX: Excel exponenciálny formát pre telefónne čísla (napr. 4,21915E+11)
+    if (!empty($data['parent_phone'])) {
+        $data['parent_phone'] = spa_fix_excel_number($data['parent_phone']);
+    }
+    if (!empty($data['member_phone'])) {
+        $data['member_phone'] = spa_fix_excel_number($data['member_phone']);
+    }
+    
+    // FIX: Odstráň medzery z PSČ (90875 vs 900 68)
+    if (!empty($data['address_psc'])) {
+        $data['address_psc'] = preg_replace('/\s+/', '', $data['address_psc']);
+    }
+    
+    // DEBUG log
+    error_log('=== MAPPED DATA ===');
+    error_log('Child: ' . $data['member_firstname'] . ' ' . $data['member_lastname']);
+    error_log('Parent: ' . $data['parent_firstname'] . ' ' . $data['parent_lastname']);
+    error_log('Parent email: ' . $data['parent_email']);
+    error_log('Parent phone: ' . $data['parent_phone']);
+    error_log('Address: ' . $data['address_street'] . ', ' . $data['address_psc'] . ' ' . $data['address_city']);
+    
     return $data;
+}
+
+/* ==========================
+   FIX EXCEL NUMBER - oprava exponenciálneho formátu
+   Konvertuje "4,21915E+11" na "421915000000" alebo čistí na čísla
+   ========================== */
+
+function spa_fix_excel_number($value) {
+    
+    // Ak obsahuje E+ alebo e+ (exponenciálny formát)
+    if (preg_match('/[Ee]\+/', $value)) {
+        // Nahraď čiarku za bodku (európsky formát)
+        $value = str_replace(',', '.', $value);
+        // Konvertuj na číslo a späť na string
+        $value = number_format((float)$value, 0, '', '');
+    }
+    
+    // Odstráň všetko okrem číslic (pre telefón)
+    // Ponechaj + na začiatku ak existuje
+    if (strpos($value, '+') === 0) {
+        $value = '+' . preg_replace('/[^0-9]/', '', substr($value, 1));
+    } else {
+        $value = preg_replace('/[^0-9]/', '', $value);
+    }
+    
+    // Pridaj +421 prefix ak začína 09
+    if (preg_match('/^09[0-9]{8}$/', $value)) {
+        $value = '+421' . substr($value, 1);
+    }
+    
+    return $value;
 }
 
 /* ==========================
@@ -414,13 +472,16 @@ function spa_remove_diacritics($string) {
 }
 
 /* ==========================
-   IMPORT CHILD (s rodičom)
+   IMPORT CHILD - OPRAVENÁ VERZIA
    ========================== */
 
 function spa_import_child($data, $program_id, $import_vs) {
     
-    // 1. Rodič
-    $parent_id = spa_get_or_create_parent(
+    error_log('=== SPA IMPORT CHILD ===');
+    error_log('Child: ' . $data['member_firstname'] . ' ' . $data['member_lastname']);
+    
+    // 1. RODIČ - použi IMPORT verziu
+    $parent_id = spa_get_or_create_parent_import(
         $data['parent_email'],
         $data['parent_firstname'],
         $data['parent_lastname'],
@@ -431,10 +492,13 @@ function spa_import_child($data, $program_id, $import_vs) {
     );
     
     if (!$parent_id) {
-        return ['success' => false, 'error' => 'Nepodarilo sa vytvoriť rodiča'];
+        return [
+            'success' => false, 
+            'error' => 'Nepodarilo sa vytvoriť rodiča (email: ' . $data['parent_email'] . ')'
+        ];
     }
     
-    // 2. Dieťa
+    // 2. DIEŤA
     $child_result = spa_create_child_account_import(
         $data['member_firstname'],
         $data['member_lastname'],
@@ -455,11 +519,10 @@ function spa_import_child($data, $program_id, $import_vs) {
     $vs = '';
     if ($import_vs && !empty($data['variabilny_symbol'])) {
         $vs = preg_replace('/[^0-9]/', '', $data['variabilny_symbol']);
-        update_user_meta($child_id, 'variabilny_symbol', $vs);
     } else {
         $vs = spa_generate_variabilny_symbol();
-        update_user_meta($child_id, 'variabilny_symbol', $vs);
     }
+    update_user_meta($child_id, 'variabilny_symbol', $vs);
     
     // 4. PIN
     $pin = spa_generate_pin();
@@ -644,6 +707,105 @@ function spa_get_or_create_client_import($email, $first_name, $last_name, $phone
         'existing' => false
     ];
 }
+
+/* ==========================
+   GET OR CREATE PARENT - IMPORT VERSION
+   Opravená verzia s korektným mapovaním polí
+   ========================== */
+
+function spa_get_or_create_parent_import($email, $first_name, $last_name, $phone, $address_street = '', $address_psc = '', $address_city = '') {
+    
+    // DEBUG
+    error_log('=== SPA CREATE PARENT ===');
+    error_log("Email: $email");
+    error_log("First: $first_name | Last: $last_name");
+    error_log("Phone: $phone");
+    error_log("Address: $address_street, $address_psc $address_city");
+    
+    // Validácia
+    if (empty($email)) {
+        error_log('SPA ERROR: Parent email is empty!');
+        return false;
+    }
+    
+    if (empty($first_name) || empty($last_name)) {
+        error_log('SPA ERROR: Parent name is empty!');
+        return false;
+    }
+    
+    // Skontroluj existujúceho
+    $existing = get_user_by('email', $email);
+    
+    if ($existing) {
+        error_log('SPA: Found existing parent ID ' . $existing->ID);
+        
+        // Aktualizuj údaje
+        wp_update_user([
+            'ID' => $existing->ID,
+            'first_name' => sanitize_text_field($first_name),
+            'last_name' => sanitize_text_field($last_name),
+            'display_name' => trim($first_name . ' ' . $last_name),
+            'nickname' => spa_generate_username_from_name($first_name, $last_name)
+        ]);
+        
+        update_user_meta($existing->ID, 'phone', sanitize_text_field($phone));
+        
+        if (!empty($address_street)) {
+            update_user_meta($existing->ID, 'address_street', sanitize_text_field($address_street));
+        }
+        if (!empty($address_psc)) {
+            update_user_meta($existing->ID, 'address_psc', sanitize_text_field($address_psc));
+        }
+        if (!empty($address_city)) {
+            update_user_meta($existing->ID, 'address_city', sanitize_text_field($address_city));
+        }
+        
+        return $existing->ID;
+    }
+    
+    // Vytvor nového rodiča
+    $username = spa_generate_username_from_name($first_name, $last_name);
+    $password = wp_generate_password(12, true);
+    
+    error_log("SPA: Creating parent with username: $username");
+    
+    $user_id = wp_insert_user([
+        'user_login'   => $username,
+        'user_email'   => sanitize_email($email),
+        'user_pass'    => $password,
+        'first_name'   => sanitize_text_field($first_name),
+        'last_name'    => sanitize_text_field($last_name),
+        'display_name' => trim($first_name . ' ' . $last_name),
+        'nickname'     => $username,
+        'role'         => 'spa_parent'
+    ]);
+    
+    if (is_wp_error($user_id)) {
+        error_log('SPA ERROR: ' . $user_id->get_error_message());
+        return false;
+    }
+    
+    // Meta data
+    update_user_meta($user_id, 'phone', sanitize_text_field($phone));
+    
+    if (!empty($address_street)) {
+        update_user_meta($user_id, 'address_street', sanitize_text_field($address_street));
+    }
+    if (!empty($address_psc)) {
+        update_user_meta($user_id, 'address_psc', sanitize_text_field($address_psc));
+    }
+    if (!empty($address_city)) {
+        update_user_meta($user_id, 'address_city', sanitize_text_field($address_city));
+    }
+    
+    error_log("SPA: Created parent ID $user_id");
+    
+    // Welcome email
+    spa_send_welcome_email($email, $username, $password, $first_name);
+    
+    return $user_id;
+}
+
 
 /* ==========================
    HELPER: Set import status
