@@ -491,7 +491,7 @@ function spa_create_child_account_import($first_name, $last_name, $birthdate, $p
     $username = spa_generate_username_from_name($first_name, $last_name);
     
     // Email - interný (deti sa neprihlasujú cez email)
-    $email = $username . '@piaseckyacademy.local';
+    $email = $username . '@piaseckyacademy.sk';
     
     // Heslo - náhodné (deti používajú PIN)
     $password = wp_generate_password(32);
