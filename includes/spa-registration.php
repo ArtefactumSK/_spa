@@ -1323,6 +1323,95 @@ function spa_auto_prepopulate_from_url($form, $is_ajax) {
     </style>
     <?php
 }
+
+
+
+
+/* ==========================
+   PRIDAŤ REGISTRÁCIU
+   ========================== */
+
+function spa_registration_details_callback($post) {
+    $child_id = get_post_meta($post->ID, 'child_user_id', true);
+    $program_id = get_post_meta($post->ID, 'program_id', true);
+    $status = get_post_meta($post->ID, 'status', true);
+    
+    // Dropdown detí
+    $children = get_users(['role' => 'spa_child']);
+    
+    ?>
+    <table class="form-table">
+        <tr>
+            <th>Dieťa:</th>
+            <td>
+                <select name="child_user_id" style="width: 100%; max-width: 400px;">
+                    <option value="">-- Vyber dieťa --</option>
+                    <?php foreach($children as $child): ?>
+                        <option value="<?php echo $child->ID; ?>" <?php selected($child_id, $child->ID); ?>>
+                            <?php echo $child->first_name . ' ' . $child->last_name; ?>
+                            (VS: <?php echo get_user_meta($child->ID, 'variabilny_symbol', true); ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th>Program:</th>
+            <td>
+                <?php 
+                $programs = get_posts(['post_type' => 'spa_group', 'posts_per_page' => -1]);
+                ?>
+                <select name="program_id" style="width: 100%; max-width: 400px;">
+                    <option value="">-- Vyber program --</option>
+                    <?php foreach($programs as $prog): ?>
+                        <option value="<?php echo $prog->ID; ?>" <?php selected($program_id, $prog->ID); ?>>
+                            <?php echo $prog->post_title; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th>Status:</th>
+            <td>
+                <select name="spa_reg_status" style="width: 200px;">
+                    <option value="pending" <?php selected($status, 'pending'); ?>>⏳ Čaká</option>
+                    <option value="approved" <?php selected($status, 'approved'); ?>>✅ Schválené</option>
+                    <option value="active" <?php selected($status, 'active'); ?>>🟢 Aktívne</option>
+                    <option value="cancelled" <?php selected($status, 'cancelled'); ?>>❌ Zrušené</option>
+                </select>
+            </td>
+        </tr>
+    </table>
+    <?php
+}
+
+// Ulož údaje
+add_action('save_post_spa_registration', 'spa_save_registration_meta', 10, 2);
+function spa_save_registration_meta($post_id, $post) {
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    
+    if (isset($_POST['child_user_id'])) {
+        update_post_meta($post_id, 'child_user_id', intval($_POST['child_user_id']));
+        
+        // Získaj rodiča z dieťaťa
+        $parent_id = get_user_meta($_POST['child_user_id'], 'parent_id', true);
+        if ($parent_id) {
+            update_post_meta($post_id, 'parent_user_id', $parent_id);
+        }
+    }
+    
+    if (isset($_POST['program_id'])) {
+        update_post_meta($post_id, 'program_id', intval($_POST['program_id']));
+    }
+    
+    if (isset($_POST['spa_reg_status'])) {
+        update_post_meta($post_id, 'status', sanitize_text_field($_POST['spa_reg_status']));
+    }
+}
+
+
+
 /*
 add_action('gform_enqueue_scripts_1', 'spa_vek_display_script', 70, 2);
 
