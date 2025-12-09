@@ -188,6 +188,14 @@ if (defined('ARTEFACTUM_COMMON')) {
     include_once(ARTEFACTUM_COMMON . 'a-wplogin.php');
 }
 
+/**
+ * URL systémovej ikony
+ */
+function spa_icon($name, $class = 'spa-icon') {
+    $url = content_url('/uploads/spa-icons/system/' . $name . '.svg');
+    return '<img src="' . esc_url($url) . '" class="' . esc_attr($class) . '" alt="">';
+}
+
 /* ==========================
    GRAVITY FORMS - Remove nag
    ========================== */
@@ -254,7 +262,7 @@ if (defined('WP_DEBUG') && WP_DEBUG && current_user_can('administrator')) {
 add_action('wp_dashboard_setup', function() {
     wp_add_dashboard_widget(
         'spa_system_status',
-        '🤸 Samuel Piasecký ACADEMY - Stav systému',
+       spa_icon('spa-icon').' Samuel Piasecký ACADEMY - Stav systému',
         function() {
             ?>
             <div style="padding: 12px;">
@@ -278,9 +286,8 @@ add_action('wp_dashboard_setup', function() {
                 
                 <hr>
                 
-                <p style="background: var(--theme-palette-color-12); padding: 8px; border-radius: 4px; font-size: 12px;">
-                    <strong>💡 Potrebuješ pomoc?</strong><br>
-                    <a href="mailto:support@artefactum.sk">support@artefactum.sk</a>
+                <p style="background: rgb(196 181 174 / 39%); padding: 8px; border-radius: 4px; font-size: 12px;">
+                    <strong>💡 Potrebuješ pomoc?</strong> → <a href="mailto:support@artefactum.sk">support@artefactum.sk</a>
                 </p>
             </div>
             <?php
