@@ -244,16 +244,36 @@ function spa_get_or_create_parent($email, $first_name, $last_name, $phone, $addr
         return $user->ID;
     }
     
-    // Vytvor nového rodiča
-    $username = sanitize_user(strtolower($first_name . '.' . $last_name));
-    $password = wp_generate_password(12, true);
-    
-    $base_username = $username;
+    // Vytvor nového rodiča - odstráň diakritiku z username
+    $chars = [
+        'á'=>'a', 'ä'=>'a', 'č'=>'c', 'ď'=>'d', 'é'=>'e', 'ě'=>'e',
+        'í'=>'i', 'ľ'=>'l', 'ĺ'=>'l', 'ň'=>'n', 'ó'=>'o', 'ô'=>'o',
+        'ŕ'=>'r', 'ř'=>'r', 'š'=>'s', 'ť'=>'t', 'ú'=>'u', 'ů'=>'u',
+        'ý'=>'y', 'ž'=>'z',
+        'Á'=>'A', 'Ä'=>'A', 'Č'=>'C', 'Ď'=>'D', 'É'=>'E', 'Ě'=>'E',
+        'Í'=>'I', 'Ľ'=>'L', 'Ĺ'=>'L', 'Ň'=>'N', 'Ó'=>'O', 'Ô'=>'O',
+        'Ŕ'=>'R', 'Ř'=>'R', 'Š'=>'S', 'Ť'=>'T', 'Ú'=>'U', 'Ů'=>'U',
+        'Ý'=>'Y', 'Ž'=>'Z'
+    ];
+
+    $first_clean = strtr($first_name, $chars);
+    $last_clean = strtr($last_name, $chars);
+    $first_clean = strtolower(preg_replace('/[^a-z0-9]/i', '', $first_clean));
+    $last_clean = strtolower(preg_replace('/[^a-z0-9]/i', '', $last_clean));
+
+    $base_username = $first_clean . '.' . $last_clean;
+    if (strlen($base_username) > 50) {
+        $base_username = substr($base_username, 0, 50);
+    }
+
+    $username = $base_username;
     $counter = 1;
     while (username_exists($username)) {
         $username = $base_username . $counter;
         $counter++;
     }
+
+    $password = wp_generate_password(12, true);
     
     $user_id = wp_create_user($username, $password, $email);
     
