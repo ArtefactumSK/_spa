@@ -6,7 +6,7 @@
  * Description: fast, modern, smart theme.
  * Template: blocksy
  * Text Domain: spa
- * Version: 2025
+ * Version: 2026
  * License: Commercial License
  */
 
@@ -43,7 +43,7 @@
 
 .spa-icon {max-height: 24px; width: auto; height: auto;vertical-align: middle;}
 h2 .spa-icon { width: 32px; height: 32px !important; display:inline-block;}
-.spa-icon-wrapper .spa-icon {width: 32px !important;height: 32px !important;display: inline-block;vertical-align: middle;}
+/* .spa-icon-wrapper .spa-icon {width: 32px !important;height: 32px !important;display: inline-block;vertical-align: middle;}*/
 
 
 /* Sociálne siete - formulár */
