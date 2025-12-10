@@ -69,7 +69,7 @@ function spa_register_cpt_registrations() {
         'menu_icon'         => 'dashicons-clipboard',
         'menu_position'     => 21,
         'hierarchical'      => false,
-        'supports'          => array( 'title' ),
+        'supports'          => ['title'], 
         'capability_type'   => 'post',
         'show_in_rest'      => false,
     ) );
