@@ -2,7 +2,7 @@
 /**
  * SPA Meta Boxes - Admin formuláre
  * @package Samuel Piasecký ACADEMY
- * @version 1.1.0
+ * @version 1.2.0
  */
 
 if (!defined('ABSPATH')) {
@@ -23,6 +23,11 @@ function spa_add_meta_boxes() {
         'high'                          // Priorita
     );
 }
+add_action('add_meta_boxes', function() {
+    global $post;
+    error_log('Adding meta boxes for post type: ' . $post->post_type);
+});
+
 
 /* ==========================
    META BOX CALLBACK
@@ -33,6 +38,9 @@ function spa_group_details_callback($post) {
 
     // Definícia polí s typmi a labelmi
     $fields = [
+        'child_first_name' => ['label'=>'Meno dieťaťa', 'type'=>'text'],
+        'child_last_name' => ['label'=>'Priezvisko dieťaťa', 'type'=>'text'],
+        'vs_number' => ['label'=>'VS', 'type'=>'text'],
         'program_name' => ['label'=>'Názov programu', 'type'=>'text'],
         'program_date' => ['label'=>'Dátum programu', 'type'=>'date'],
         'program_location' => ['label'=>'Miesto konania', 'type'=>'text'],
@@ -48,10 +56,26 @@ function spa_group_details_callback($post) {
                 'advanced'=>'Pokročilý'
             ]
         ],
+        'registration_status' => [
+            'label'=>'Status',
+            'type'=>'select',
+            'options'=>[
+                'new'=>'Nová registrácia',
+                'confirmed'=>'Potvrdená',
+                'cancelled'=>'Zrušená'
+            ]
+        ]
     ];
 
     foreach($fields as $key => $field) {
         $value = get_post_meta($post->ID, $key, true);
+
+        // Pri novom post-e nastavíme predvolené hodnoty (napr. Status)
+        if(!$value) {
+            if($key === 'registration_status') $value = 'new';
+            else $value = ''; // ostatné polia prázdne
+        }
+
         echo '<p>';
         echo '<label for="'.esc_attr($key).'">'.esc_html($field['label']).'</label><br />';
         
@@ -93,12 +117,22 @@ function spa_save_meta_box_data($post_id) {
     }
 
     // Polia na uloženie
-    $fields = ['program_name','program_date','program_location','program_instructor','program_description','program_level'];
+    $fields = [
+        'child_first_name',
+        'child_last_name',
+        'vs_number',
+        'program_name',
+        'program_date',
+        'program_location',
+        'program_instructor',
+        'program_description',
+        'program_level',
+        'registration_status'
+    ];
 
     foreach($fields as $field) {
         if(isset($_POST[$field])) {
             $sanitized = sanitize_text_field($_POST[$field]);
-            // textarea môže obsahovať odriadkovanie, takže nahradíme sanitize_textarea_field
             if($field === 'program_description') {
                 $sanitized = sanitize_textarea_field($_POST[$field]);
             }
