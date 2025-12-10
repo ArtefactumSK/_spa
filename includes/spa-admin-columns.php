@@ -30,6 +30,30 @@ function spa_reg_columns($columns) {
 
 add_action('manage_spa_registration_posts_custom_column', 'spa_reg_column_data', 10, 2);
 function spa_reg_column_data($column, $post_id) {
+    switch ($column) {
+        case 'reg_child':
+            echo get_post_meta($post_id, '_spa_child_name', true);
+            break;
+        case 'reg_program':
+            echo get_post_meta($post_id, '_spa_program', true);
+            break;
+        case 'reg_parent':
+            $parent_name = get_post_meta($post_id, '_spa_parent_name', true);
+            $parent_email = get_post_meta($post_id, '_spa_parent_email', true);
+            echo $parent_name . '<br>' . $parent_email;
+            break;
+        case 'reg_vs':
+            echo get_post_meta($post_id, '_spa_variable_symbol', true);
+            break;
+        case 'reg_status':
+            $status = get_post_meta($post_id, '_spa_payment_status', true);
+            echo $status ? $status : 'Nezaplatené';
+            break;
+    }
+}
+
+/*
+function spa_reg_column_data($column, $post_id) {
     
     switch ($column) {
         
@@ -115,6 +139,7 @@ function spa_reg_column_data($column, $post_id) {
             break;
     }
 }
+*/
 
 /* ==========================
    SKUPINY - STLPCE
