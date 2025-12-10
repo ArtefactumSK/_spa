@@ -214,8 +214,7 @@ $spa_modules = [
     'spa-helpers.php',        // Pomocné funkcie
     'spa-cpt.php',           // Custom Post Types
     'spa-admin-columns.php',  // Admin columns
-    'spa-taxonomies.php',    // Taxonómie
-    'spa-meta-boxes.php',    // Admin meta boxy
+    'spa-taxonomies.php',    // Taxonómie    
     'spa-shortcodes.php',    // Frontend shortcodes
     'spa-widgets.php',       // Widgety, bannery
     'spa-calendar.php',      // Kalendár, Obsadenosť hál
@@ -223,6 +222,7 @@ $spa_modules = [
     'spa-login.php',         // ✅ Custom login systém (email+heslo / meno+priezvisko+PIN)
     'spa-login-popup.php',   // ✅ login popup
     'spa-registration.php',  // Registračný systém (FÁZA 2)
+    'spa-meta-boxes.php',    // Admin meta boxy
     'spa-import.php',        // ✅ NOVÉ: Import nástroj
     'spa-trainer.php',       // ✅ NOVÉ: Správa trénerov
     // 'spa-dashboard.php',     // Dashboardy (FÁZA 2)
