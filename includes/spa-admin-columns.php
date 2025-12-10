@@ -30,27 +30,48 @@ function spa_reg_columns($columns) {
 
 add_action('manage_spa_registration_posts_custom_column', 'spa_reg_column_data', 10, 2);
 function spa_reg_column_data($column, $post_id) {
+    $client_user_id = get_post_meta($post_id, 'client_user_id', true);
+    $parent_user_id = get_post_meta($post_id, 'parent_user_id', true);
+
     switch ($column) {
         case 'reg_child':
-            echo get_post_meta($post_id, '_spa_child_name', true);
+            if ($client_user_id) {
+                $child = get_userdata($client_user_id);
+                echo $child ? $child->display_name : 'Nezadané';
+            } else {
+                echo 'Nezadané';
+            }
             break;
         case 'reg_program':
-            echo get_post_meta($post_id, '_spa_program', true);
+            $program_id = get_post_meta($post_id, 'program_id', true);
+            echo get_the_title($program_id);
             break;
         case 'reg_parent':
-            $parent_name = get_post_meta($post_id, '_spa_parent_name', true);
-            $parent_email = get_post_meta($post_id, '_spa_parent_email', true);
-            echo $parent_name . '<br>' . $parent_email;
+            if ($parent_user_id) {
+                $parent = get_userdata($parent_user_id);
+                echo $parent ? $parent->display_name . '<br>' . $parent->user_email : 'Nezadané';
+            } else {
+                echo 'Nezadané';
+            }
             break;
         case 'reg_vs':
-            echo get_post_meta($post_id, '_spa_variable_symbol', true);
+            if ($client_user_id) {
+                $variable_symbol = get_user_meta($client_user_id, 'variabilny_symbol', true);
+                echo !empty($variable_symbol) ? $variable_symbol : 'Nezadané';
+            } else {
+                echo 'Nezadané';
+            }
             break;
         case 'reg_status':
-            $status = get_post_meta($post_id, '_spa_payment_status', true);
-            echo $status ? $status : 'Nezaplatené';
+            $status = get_post_meta($post_id, 'status', true);
+            echo $status == 'active' ? 'Aktívne' : 'Nezaplatené';
             break;
     }
 }
+
+
+
+
 
 /*
 function spa_reg_column_data($column, $post_id) {
