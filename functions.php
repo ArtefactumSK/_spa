@@ -212,7 +212,7 @@ add_action('admin_init', function() {
 $spa_modules = [
     'spa-core.php',           // Základné funkcie, role, capabilities
     'spa-helpers.php',        // Pomocné funkcie
-    'spa-cpt.php',           // Custom Post Types
+    //'spa-cpt.php',           // Custom Post Types
     'spa-admin-columns.php',  // Admin columns
     'spa-taxonomies.php',    // Taxonómie
     'spa-meta-boxes.php',    // Admin meta boxy
