@@ -203,7 +203,7 @@ function spa_get_status_label($status) {
         'approved' => 'Schválené',
         'active' => 'Aktívne',
         'cancelled' => 'Zrušené',
-        'completed' => 'Dokončené'
+        'completed' => 'Zaregistrované'
     ];
     
     return isset($labels[$status]) ? $labels[$status] : ucfirst($status);

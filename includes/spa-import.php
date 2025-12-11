@@ -145,7 +145,7 @@ function spa_import_page() {
                 <tr><td>👶 Deti</td><td><strong><?php echo $children; ?></strong></td></tr>
                 <tr><td>🏃 Dospelí klienti</td><td><strong><?php echo $clients; ?></strong></td></tr>
                 <tr><td>📋 Registrácie</td><td><strong><?php echo $regs; ?></strong></td></tr>
-                <tr><td>🏋️ Programy</td><td><strong><?php echo count($programs); ?></strong></td></tr>
+                <tr><td>🤸🏻‍♂️ Programy</td><td><strong><?php echo count($programs); ?></strong></td></tr>
             </table>
         </div>
     </div>

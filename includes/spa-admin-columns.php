@@ -64,7 +64,7 @@ function spa_reg_column_data($column, $post_id) {
             break;
         case 'reg_status':
             $status = get_post_meta($post_id, 'status', true);
-            echo $status == 'active' ? 'Aktívne' : 'Nezaplatené';
+            echo $status == 'active' ? 'Aktívny' : 'Nezaplatené';
             break;
     }
 }

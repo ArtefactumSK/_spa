@@ -158,7 +158,7 @@ function spa_cpt_registration_columns($columns) {
         'cb' => $columns['cb'],
         'title' => 'Názov',
         'child' => '👶 Dieťa / Klient',
-        'program' => '🏋️ Program',
+        'program' => '🤸🏻‍♂️ Program',
         'parent' => '👨‍👩‍👧 Rodič',
         'vs' => 'VS',
         'status' => 'Status',
@@ -235,11 +235,11 @@ function spa_registration_column_content($column, $post_id) {
 
         case 'status':
             $labels = [
-                'pending' => ['Čaká', '#f0ad4e', '#fff'],
-                'approved' => ['Schválené', '#5bc0de', '#fff'],
-                'active' => ['Aktívne', '#5cb85c', '#fff'],
-                'cancelled' => ['Zrušené', '#d9534f', '#fff'],
-                'completed' => ['Dokončené', '#777', '#fff']
+                'pending' => ['Čaká na schválenie', '#FFB81C', '#000'],
+                'approved' => ['Schválené', '#0066FF', '#fff'],
+                'active' => ['Aktívny', '#00C853', '#fff'],
+                'cancelled' => ['Zrušené', '#FF1439', '#fff'],
+                'completed' => ['Zaregistrované', '#777', '#fff']
             ];
 
             $label = $labels[$status] ?? ['Neznámy', '#999', '#fff'];

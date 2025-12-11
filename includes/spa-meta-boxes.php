@@ -149,7 +149,7 @@ function spa_registration_details_callback($post) {
         'approved' => '✅ Schválené',
         'active' => '🟢 Aktívny',
         'cancelled' => '❌ Zrušené',
-        'completed' => '🟠 Dokončené'
+        'completed' => '✔ Zaregistrované'
     );
     
     $client_name = '';
