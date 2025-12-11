@@ -411,7 +411,7 @@ function spa_programs_styles() {
     .spa-program-icon svg {width: 72px;height: 72px;fill: var(--theme-palette-color-1);transition: all 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);transform-origin: 50% 75%;position: relative;}
     .spa-program-card:hover .spa-program-icon svg {fill: var(--theme-palette-color-3);transform: translateX(-100px) translateY(10px) rotate(-360deg) scale(1.1);}
     .spa-program-category {display: inline-block;padding: 6px 16px;border-radius: 20px;font-size: 12px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;margin-bottom: 16px;}
-    .spa-program-title .title-sub {display: block;font-size: 16px;font-weight: 400;color: var(--theme-text-color);margin-top: 8px;}
+    .spa-program-title .title-sub {display: block;font-family:Michroma, Sans-Serif;font-size: 12px;font-weight: 400;color: var(--theme-text-color);margin-top: 8px;}
     .spa-program-title {font-size: 24px;font-weight: 700;margin: 6px 0;color: var(--theme-palette-color-3);line-height: 1.3;text-align: center;}
     .spa-program-title .title-main {display: block;}
     .spa-program-description {font-size: 14px;line-height: 1.6;color: #555;margin: 12px 0;padding: 12px;background: #f9f9fb;border-radius: 8px;border-left: 3px solid var(--theme-palette-color-1);}

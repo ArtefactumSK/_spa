@@ -57,7 +57,7 @@ function spa_trainer_management_shortcode($atts) {
     <div class="spa-trainer-management">
         
         <div class="spa-tm-header">
-            <h2>Správa trénerov <?php echo spa_icon('trainer'); ?></h2>
+            <h2>👟 Správa trénerov</h2>
             <button type="button" class="spa-btn spa-btn-primary" id="spa-add-trainer-btn">
                 <strong>+</strong> Pridať nového trénera
             </button>
@@ -73,7 +73,7 @@ function spa_trainer_management_shortcode($atts) {
             <div class="spa-modal-overlay"></div>
             <div class="spa-modal-content">
                 <div class="spa-modal-header">
-                    <h3 id="spa-modal-title">Pridať trénera</h3>
+                    <h3 id="spa-modal-title">Pridať trénera 👟</h3>
                     <button type="button" class="spa-modal-close">&times;</button>
                 </div>
                 <form id="spa-trainer-form" enctype="multipart/form-data">

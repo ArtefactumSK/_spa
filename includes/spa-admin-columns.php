@@ -170,12 +170,12 @@ add_filter('manage_spa_group_posts_columns', 'spa_grp_columns');
 function spa_grp_columns($columns) {
     return array(
         'cb'          => $columns['cb'],
-        'title'       => 'Nazov',
-        'grp_place'   => 'Miesto',
-        'grp_cat'     => 'Kategoria',
-        'grp_price'   => 'Cena',
-        'grp_count'   => 'Pocet',
-        'date'        => 'Datum'
+        'title'       => '🤸🏻‍♂️ Nazov',
+        'grp_place'   => '📍Miesto, špec.',
+        'grp_cat'     => '☆Kategória',
+        'grp_price'   => '💳 Cena',
+        'grp_count'   => '✔ Reg.'
+        // 'date'        => 'Dátum'
     );
 }
 

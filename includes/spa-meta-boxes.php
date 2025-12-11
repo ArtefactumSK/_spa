@@ -149,8 +149,8 @@ function spa_group_details_callback($post) {
     .spa-meta-row { display: flex; align-items: flex-start; margin-bottom: 12px; }
     .spa-meta-row label { width: 140px; font-weight: 600; padding-top: 6px; }
     .spa-meta-row .spa-field { flex: 1; }
-    .spa-icon-preview { width: 60px; height: 60px; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #fff; margin-left: 10px; }
-    .spa-icon-preview svg { width: 40px; height: 40px; }
+    .spa-icon-preview { width: 80px; height: 80px; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #fff; margin-left: 10px; }
+    .spa-icon-preview svg { width: 69px; height: 69px; }
     .spa-schedule-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
     .spa-schedule-row select, .spa-schedule-row input { padding: 6px 10px; }
     .spa-trainer-checkboxes label { display: block; margin-bottom: 5px; font-weight: normal; }
@@ -159,14 +159,13 @@ function spa_group_details_callback($post) {
     </style>
     
     <!-- SVG IKONA -->
-    <div class="spa-meta-section">
-        <h4>SVG Ikona programu</h4>
+    <div>        
         <div class="spa-meta-row">
-            <label>Vyber ikonu:</label>
+            <label>🤸🏻‍♂️ Ikona programu:</label>
             <div class="spa-field" style="display: flex; align-items: center;">
                 <?php if (empty($svg_files)) : ?>
                     <p style="color: #d63638; margin: 0;">
-                        Ziadne SVG ikony v <code>/wp-content/uploads/spa-icons/</code>
+                        Žiadne ikony v adresári ikon
                     </p>
                     <input type="hidden" name="spa_icon" value="">
                 <?php else : ?>
@@ -194,26 +193,25 @@ function spa_group_details_callback($post) {
     
     <!-- CENA A KAPACITA -->
     <div class="spa-meta-section">
-        <h4>Cena a kapacita</h4>
+        <h4>🎲 Cena programu a kapacita</h4>
         <div class="spa-meta-row">
-            <label for="spa_price">Cena (EUR):</label>
+            <label for="spa_price">💳 Cena (EUR):</label>
             <div class="spa-field">
                 <input type="text" name="spa_price" id="spa_price" value="<?php echo esc_attr($price); ?>" style="width: 100px;">
-                <span class="spa-help">Napr. 30 alebo 45.50</span>
+                <span class="spa-help">napr. 30 alebo 45,50</span>
             </div>
         </div>
         <div class="spa-meta-row">
-            <label for="spa_capacity">Kapacita:</label>
+            <label for="spa_capacity">𐀪𐀪 Kapacita:</label>
             <div class="spa-field">
-                <input type="number" name="spa_capacity" id="spa_capacity" value="<?php echo esc_attr($capacity); ?>" style="width: 80px;" min="1">
-                <span class="spa-help">Max. pocet deti na treningu</span>
+                <input type="number" name="spa_capacity" id="spa_capacity" value="<?php echo esc_attr($capacity); ?>" style="width: 100px;" min="1">
+                <span class="spa-help">max. počet účastníkov tréningu</span>
             </div>
-        </div>
-    </div>
+        </div>    
     
     <!-- ROZVRH -->
-    <div class="spa-meta-section">
-        <h4>Rozvrh treningov</h4>
+        <br><br>
+        <h4>📅 Rozvrh tréningov programu</h4>
         <div id="spa-schedule-repeater">
             <?php 
             if (!empty($schedule) && is_array($schedule)) {
@@ -226,14 +224,13 @@ function spa_group_details_callback($post) {
             ?>
         </div>
         <p style="margin-top: 10px;">
-            <button type="button" class="button" id="spa-add-schedule">+ Pridat termin</button>
-            <button type="button" class="button" id="spa-remove-schedule">- Odstranit posledny</button>
+            <button type="button" class="button" id="spa-add-schedule">+ Pridať termín</button>
+            <button type="button" class="button" id="spa-remove-schedule">- Odstrániť posledný</button>
         </p>
-    </div>
-    
+        
     <!-- TRENERI -->
-    <div class="spa-meta-section">
-        <h4>Prideleni treneri</h4>
+        <br><br>
+        <h4>👟 Pridelení tréneri</h4>
         <div class="spa-trainer-checkboxes">
             <?php if (empty($trainers)) : ?>
                 <p style="color: #666;">Ziadni treneri nie su registrovani.</p>
