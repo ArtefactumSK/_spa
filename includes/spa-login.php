@@ -161,7 +161,7 @@ function spa_login_form_shortcode($atts) {
         <div class="spa-alert-container" style="display: none;"></div>
         
         <div class="spa-login-tabs">
-            <button type="button" class="spa-tab-btn active" data-tab="adult">👨‍👩‍👧 Rodič / Dospelý</button>
+            <button type="button" class="spa-tab-btn active" data-tab="adult">👨‍👩‍👧 Rodič / Klient</button>
             <button type="button" class="spa-tab-btn" data-tab="child">👶 Dieťa</button>
         </div>
         

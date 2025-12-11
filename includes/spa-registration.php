@@ -1383,7 +1383,7 @@ function spa_register_registration_cpt() {
    ADMIN COLUMNS – FIX (plne funkčné, bezpečné)
    ============================================================ */
 
-add_filter('manage_spa_registration_posts_columns', 'spa_registration_columns');
+/* add_filter('manage_spa_registration_posts_columns', 'spa_registration_columns');
 function spa_registration_columns($columns) {
 
     $new = [
@@ -1442,4 +1442,4 @@ function spa_registration_columns_content($column, $post_id) {
             echo esc_html($status ?: '—');
             break;
     }
-}
+} */

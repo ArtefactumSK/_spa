@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
    REGISTRACIE - STLPCE
    ========================== */
 
-add_filter('manage_spa_registration_posts_columns', 'spa_reg_columns');
+/* add_filter('manage_spa_registration_posts_columns', 'spa_reg_columns');
 function spa_reg_columns($columns) {
     return array(
         'cb'      => $columns['cb'],
@@ -68,7 +68,7 @@ function spa_reg_column_data($column, $post_id) {
             break;
     }
 }
-
+ */
 
 
 

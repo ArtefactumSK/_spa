@@ -157,7 +157,7 @@ function spa_cpt_registration_columns($columns) {
     $new_columns = [
         'cb' => $columns['cb'],
         'title' => 'Názov',
-        'child' => '👶 Dieťa',
+        'child' => '👶 Dieťa / Klient',
         'program' => '🏋️ Program',
         'parent' => '👨‍👩‍👧 Rodič',
         'vs' => 'VS',
@@ -341,3 +341,70 @@ function spa_group_column_content($column, $post_id) {
     }
 }
 
+/* ==========================
+   MENU: Zmena "Pridat registraciu" na externy link
+   ========================== */
+
+// Odstran povodny submenu link a pridaj novy
+add_action('admin_menu', 'spa_fix_registration_submenu', 999);
+function spa_fix_registration_submenu() {
+    global $submenu;
+    
+    // Odstran "Pridat registraciu" z podmenu
+    if (isset($submenu['edit.php?post_type=spa_registration'])) {
+        foreach ($submenu['edit.php?post_type=spa_registration'] as $key => $item) {
+            if (isset($item[2]) && strpos($item[2], 'post-new.php') !== false) {
+                unset($submenu['edit.php?post_type=spa_registration'][$key]);
+            }
+        }
+    }
+    
+    // Pridaj novy submenu s custom URL
+    add_submenu_page(
+        'edit.php?post_type=spa_registration',
+        'Pridat registraciu',
+        'Pridat registraciu',
+        'edit_posts',
+        'spa-add-registration-redirect',
+        'spa_add_registration_redirect_page'
+    );
+}
+
+// Dummy callback (nikdy sa nezavola kvoli redirectu)
+function spa_add_registration_redirect_page() {
+    // Prazdne
+}
+
+// Redirect ak niekto klikne na submenu
+add_action('admin_init', 'spa_handle_registration_redirect');
+function spa_handle_registration_redirect() {
+    if (isset($_GET['page']) && $_GET['page'] === 'spa-add-registration-redirect') {
+        wp_redirect(home_url('/registracia/'));
+        exit;
+    }
+}
+
+// JavaScript pre otvorenie v novom okne (backup)
+add_action('admin_footer', 'spa_registration_menu_target_blank');
+function spa_registration_menu_target_blank() {
+    ?>
+    <script type="text/javascript">
+    (function() {
+        // Menu vlavo - najdi link na redirect page
+        var links = document.querySelectorAll('a[href*="spa-add-registration-redirect"]');
+        links.forEach(function(link) {
+            link.setAttribute('href', '<?php echo esc_url(home_url('/registracia/')); ?>');
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener');
+        });
+        
+        // Tlacidlo hore "Pridat registraciu" 
+        var addBtn = document.querySelector('.page-title-action');
+        if (addBtn && addBtn.textContent.indexOf('Pridat') !== -1) {
+            addBtn.setAttribute('href', '<?php echo esc_url(home_url('/registracia/')); ?>');
+            addBtn.setAttribute('target', '_blank');
+        }
+    })();
+    </script>
+    <?php
+}
