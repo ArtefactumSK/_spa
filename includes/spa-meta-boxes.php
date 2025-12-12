@@ -1,546 +1,592 @@
 <?php
-/**
- * SPA Meta Boxes - Admin formulare pre CPT
- * @package Samuel Piasecky ACADEMY
- * @version 3.0.0
+/** spa-meta-boxes.php
+ * SPA Meta Boxes - Admin formuláre pre CPT
+ * @package Samuel Piasecký ACADEMY
+ * @version 3.0.0 - FÁZA 1: Nové meta boxy podľa AKČNÉHO PLÁNU
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-/* ==========================
-   REGISTRACIA - MENU REDIRECT
-   ========================== */
-
-add_action('admin_menu', 'spa_change_add_registration_link', 999);
-function spa_change_add_registration_link() {
-    global $submenu;
-    if (isset($submenu['edit.php?post_type=spa_registration'])) {
-        foreach ($submenu['edit.php?post_type=spa_registration'] as $key => $item) {
-            if (strpos($item[2], 'post-new.php') !== false) {
-                $submenu['edit.php?post_type=spa_registration'][$key][2] = home_url('/registracia/');
-            }
-        }
-    }
+/* ============================================================
+   PRIDANIE VŠETKÝCH META BOXOV
+   ============================================================ */
+add_action('add_meta_boxes', 'spa_add_all_meta_boxes');
+function spa_add_all_meta_boxes() {
+    
+    // PROGRAMY (spa_group)
+    add_meta_box('spa_group_details', '🤸 Detaily programu', 'spa_group_meta_box', 'spa_group', 'normal', 'high');
+    add_meta_box('spa_group_pricing', '💰 Cenník programu', 'spa_group_pricing_meta_box', 'spa_group', 'normal', 'high');
+    
+    // REGISTRÁCIE
+    add_meta_box('spa_registration_details', '📋 Detaily registrácie', 'spa_registration_meta_box', 'spa_registration', 'normal', 'high');
+    
+    // MIESTA (spa_place) - NOVÉ
+    add_meta_box('spa_place_details', '📍 Detaily miesta', 'spa_place_meta_box', 'spa_place', 'normal', 'high');
+    add_meta_box('spa_place_schedule', '📅 Rozvrh miesta', 'spa_place_schedule_meta_box', 'spa_place', 'normal', 'default');
+    
+    // UDALOSTI (spa_event) - NOVÉ
+    add_meta_box('spa_event_details', '📅 Detaily udalosti', 'spa_event_meta_box', 'spa_event', 'normal', 'high');
+    
+    // DOCHÁDZKA (spa_attendance) - NOVÉ
+    add_meta_box('spa_attendance_details', '✅ Záznam dochádzky', 'spa_attendance_meta_box', 'spa_attendance', 'normal', 'high');
 }
 
-add_action('admin_footer', 'spa_add_new_registration_js');
-function spa_add_new_registration_js() {
-    $url = esc_url(home_url('/registracia/'));
+/* ============================================================
+   META BOX: MIESTO (spa_place) - NOVÉ
+   ============================================================ */
+function spa_place_meta_box($post) {
+    wp_nonce_field('spa_save_place', 'spa_place_nonce');
+    
+    $type = get_post_meta($post->ID, 'spa_place_type', true);
+    $address = get_post_meta($post->ID, 'spa_place_address', true);
+    $city = get_post_meta($post->ID, 'spa_place_city', true);
+    $gps_lat = get_post_meta($post->ID, 'spa_place_gps_lat', true);
+    $gps_lng = get_post_meta($post->ID, 'spa_place_gps_lng', true);
+    $contact = get_post_meta($post->ID, 'spa_place_contact', true);
+    $notes = get_post_meta($post->ID, 'spa_place_notes', true);
+    
     ?>
-    <script type="text/javascript">
+    <style>
+    .spa-meta-row { display: flex; margin-bottom: 15px; align-items: flex-start; }
+    .spa-meta-row label { width: 150px; font-weight: 600; padding-top: 8px; }
+    .spa-meta-row .spa-field { flex: 1; }
+    .spa-meta-row input[type="text"], .spa-meta-row textarea, .spa-meta-row select { width: 100%; max-width: 400px; padding: 8px; }
+    .spa-help { color: #666; font-size: 12px; margin-top: 4px; }
+    .spa-section { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 20px; }
+    .spa-section h4 { margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    </style>
+    
+    <div class="spa-section">
+        <h4>📍 Základné informácie</h4>
+        
+        <div class="spa-meta-row">
+            <label for="spa_place_type">Typ priestoru:</label>
+            <div class="spa-field">
+                <select name="spa_place_type" id="spa_place_type">
+                    <option value="">-- Vyberte typ --</option>
+                    <option value="spa" <?php selected($type, 'spa'); ?>>🏠 Priestory SPA (vlastné)</option>
+                    <option value="external" <?php selected($type, 'external'); ?>>🏫 Externé priestory (prenájom)</option>
+                </select>
+                <p class="spa-help">Externé priestory môžu mať príplatok v cene programu</p>
+            </div>
+        </div>
+        
+        <div class="spa-meta-row">
+            <label for="spa_place_city">Mesto:</label>
+            <div class="spa-field">
+                <input type="text" name="spa_place_city" id="spa_place_city" value="<?php echo esc_attr($city); ?>" placeholder="napr. Malacky, Košice">
+            </div>
+        </div>
+        
+        <div class="spa-meta-row">
+            <label for="spa_place_address">Adresa:</label>
+            <div class="spa-field">
+                <input type="text" name="spa_place_address" id="spa_place_address" value="<?php echo esc_attr($address); ?>" placeholder="napr. Športová hala Basso, Sasinkova 2">
+            </div>
+        </div>
+        
+        <div class="spa-meta-row">
+            <label>GPS súradnice:</label>
+            <div class="spa-field">
+                <input type="text" name="spa_place_gps_lat" value="<?php echo esc_attr($gps_lat); ?>" placeholder="Lat" style="width: 150px; margin-right: 10px;">
+                <input type="text" name="spa_place_gps_lng" value="<?php echo esc_attr($gps_lng); ?>" placeholder="Lng" style="width: 150px;">
+                <p class="spa-help">Voliteľné - pre zobrazenie na mape</p>
+            </div>
+        </div>
+        
+        <div class="spa-meta-row">
+            <label for="spa_place_contact">Kontakt:</label>
+            <div class="spa-field">
+                <input type="text" name="spa_place_contact" id="spa_place_contact" value="<?php echo esc_attr($contact); ?>" placeholder="Telefón alebo email na správcu">
+            </div>
+        </div>
+        
+        <div class="spa-meta-row">
+            <label for="spa_place_notes">Poznámky:</label>
+            <div class="spa-field">
+                <textarea name="spa_place_notes" id="spa_place_notes" rows="3" placeholder="Interné poznámky k miestu..."><?php echo esc_textarea($notes); ?></textarea>
+            </div>
+        </div>
+    </div>
+    <?php
+}
+
+/* ============================================================
+   META BOX: ROZVRH MIESTA (spa_place) - NOVÉ
+   Týždenný kalendár s časovými slotmi
+   ============================================================ */
+function spa_place_schedule_meta_box($post) {
+    
+    $schedule_json = get_post_meta($post->ID, 'spa_place_schedule', true);
+    $schedule = $schedule_json ? json_decode($schedule_json, true) : array();
+    
+    $days = array(
+        'monday' => 'Pondelok',
+        'tuesday' => 'Utorok',
+        'wednesday' => 'Streda',
+        'thursday' => 'Štvrtok',
+        'friday' => 'Piatok',
+        'saturday' => 'Sobota',
+        'sunday' => 'Nedeľa'
+    );
+    
+    ?>
+    <style>
+    .spa-schedule-table { width: 100%; border-collapse: collapse; }
+    .spa-schedule-table th, .spa-schedule-table td { padding: 10px; border: 1px solid #ddd; text-align: center; }
+    .spa-schedule-table th { background: #f1f1f1; }
+    .spa-schedule-table input[type="time"] { width: 90px; }
+    </style>
+    
+    <p><strong>Prevádzková doba miesta:</strong> Zadajte časy, kedy je miesto k dispozícii pre tréningy.</p>
+    
+    <table class="spa-schedule-table">
+        <thead>
+            <tr>
+                <th>Deň</th>
+                <th>Od</th>
+                <th>Do</th>
+                <th>Kapacita</th>
+                <th>Aktívne</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($days as $day_key => $day_label) : 
+                $row = isset($schedule[$day_key]) ? $schedule[$day_key] : array();
+            ?>
+            <tr>
+                <td><strong><?php echo $day_label; ?></strong></td>
+                <td><input type="time" name="spa_place_schedule[<?php echo $day_key; ?>][from]" value="<?php echo esc_attr($row['from'] ?? ''); ?>"></td>
+                <td><input type="time" name="spa_place_schedule[<?php echo $day_key; ?>][to]" value="<?php echo esc_attr($row['to'] ?? ''); ?>"></td>
+                <td><input type="number" name="spa_place_schedule[<?php echo $day_key; ?>][capacity]" value="<?php echo esc_attr($row['capacity'] ?? ''); ?>" min="0" style="width: 60px;"></td>
+                <td><input type="checkbox" name="spa_place_schedule[<?php echo $day_key; ?>][active]" value="1" <?php checked(!empty($row['active'])); ?>></td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+    
+    <p class="spa-help" style="margin-top: 10px;">Kapacita = maximálny počet ľudí v danom čase. Prázdne = neobmedzené.</p>
+    <?php
+}
+
+/* ============================================================
+   META BOX: UDALOSŤ (spa_event) - NOVÉ
+   ============================================================ */
+function spa_event_meta_box($post) {
+    wp_nonce_field('spa_save_event', 'spa_event_nonce');
+    
+    $place_id = get_post_meta($post->ID, 'spa_event_place_id', true);
+    $type = get_post_meta($post->ID, 'spa_event_type', true);
+    $date_from = get_post_meta($post->ID, 'spa_event_date_from', true);
+    $date_to = get_post_meta($post->ID, 'spa_event_date_to', true);
+    $time_from = get_post_meta($post->ID, 'spa_event_time_from', true);
+    $time_to = get_post_meta($post->ID, 'spa_event_time_to', true);
+    $all_day = get_post_meta($post->ID, 'spa_event_all_day', true);
+    $recurring = get_post_meta($post->ID, 'spa_event_recurring', true);
+    
+    // Získaj všetky miesta
+    $places = get_posts(array('post_type' => 'spa_place', 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC'));
+    
+    ?>
+    <style>
+    .spa-meta-row { display: flex; margin-bottom: 15px; align-items: flex-start; }
+    .spa-meta-row label { width: 150px; font-weight: 600; padding-top: 8px; }
+    .spa-meta-row .spa-field { flex: 1; }
+    .spa-section { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 20px; }
+    </style>
+    
+    <div class="spa-section">
+        
+        <div class="spa-meta-row">
+            <label for="spa_event_type">Typ udalosti:</label>
+            <div class="spa-field">
+                <select name="spa_event_type" id="spa_event_type">
+                    <option value="">-- Vyberte typ --</option>
+                    <option value="block" <?php selected($type, 'block'); ?>>🚫 Blokovanie (tréningy neprebehajú)</option>
+                    <option value="event" <?php selected($type, 'event'); ?>>🎉 Udalosť (špeciálna akcia)</option>
+                    <option value="competition" <?php selected($type, 'competition'); ?>>🏆 Súťaž</option>
+                    <option value="holiday" <?php selected($type, 'holiday'); ?>>🎄 Sviatok / Prázdniny</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="spa-meta-row">
+            <label for="spa_event_place_id">Miesto:</label>
+            <div class="spa-field">
+                <select name="spa_event_place_id" id="spa_event_place_id">
+                    <option value="">-- Všetky miesta --</option>
+                    <?php foreach ($places as $place) : ?>
+                        <option value="<?php echo $place->ID; ?>" <?php selected($place_id, $place->ID); ?>><?php echo esc_html($place->post_title); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="spa-help">Ak nevyberiete miesto, udalosť platí pre všetky miesta</p>
+            </div>
+        </div>
+        
+        <div class="spa-meta-row">
+            <label>Dátum:</label>
+            <div class="spa-field">
+                <input type="date" name="spa_event_date_from" value="<?php echo esc_attr($date_from); ?>" style="margin-right: 10px;">
+                <span>do</span>
+                <input type="date" name="spa_event_date_to" value="<?php echo esc_attr($date_to); ?>" style="margin-left: 10px;">
+                <p class="spa-help">Pre jednodňovú udalosť zadajte len prvý dátum</p>
+            </div>
+        </div>
+        
+        <div class="spa-meta-row">
+            <label>
+                <input type="checkbox" name="spa_event_all_day" value="1" <?php checked($all_day); ?> id="spa_event_all_day">
+                Celý deň
+            </label>
+        </div>
+        
+        <div class="spa-meta-row" id="spa_event_time_row" style="<?php echo $all_day ? 'display:none;' : ''; ?>">
+            <label>Čas:</label>
+            <div class="spa-field">
+                <input type="time" name="spa_event_time_from" value="<?php echo esc_attr($time_from); ?>" style="margin-right: 10px;">
+                <span>do</span>
+                <input type="time" name="spa_event_time_to" value="<?php echo esc_attr($time_to); ?>" style="margin-left: 10px;">
+            </div>
+        </div>
+        
+        <div class="spa-meta-row">
+            <label for="spa_event_recurring">Opakovanie:</label>
+            <div class="spa-field">
+                <select name="spa_event_recurring" id="spa_event_recurring">
+                    <option value="once" <?php selected($recurring, 'once'); ?>>Jednorazovo</option>
+                    <option value="weekly" <?php selected($recurring, 'weekly'); ?>>Každý týždeň</option>
+                    <option value="monthly" <?php selected($recurring, 'monthly'); ?>>Každý mesiac</option>
+                    <option value="yearly" <?php selected($recurring, 'yearly'); ?>>Každý rok</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    document.getElementById('spa_event_all_day').addEventListener('change', function() {
+        document.getElementById('spa_event_time_row').style.display = this.checked ? 'none' : 'flex';
+    });
+    </script>
+    <?php
+}
+
+/* ============================================================
+   META BOX: DOCHÁDZKA (spa_attendance) - NOVÉ
+   ============================================================ */
+function spa_attendance_meta_box($post) {
+    wp_nonce_field('spa_save_attendance', 'spa_attendance_nonce');
+    
+    $client_id = get_post_meta($post->ID, 'spa_att_client_id', true);
+    $program_id = get_post_meta($post->ID, 'spa_att_program_id', true);
+    $registration_id = get_post_meta($post->ID, 'spa_att_registration_id', true);
+    $date = get_post_meta($post->ID, 'spa_att_date', true);
+    $status = get_post_meta($post->ID, 'spa_att_status', true);
+    $rating = get_post_meta($post->ID, 'spa_att_rating', true);
+    $stars = get_post_meta($post->ID, 'spa_att_stars', true);
+    $points = get_post_meta($post->ID, 'spa_att_points', true);
+    $note = get_post_meta($post->ID, 'spa_att_note', true);
+    
+    ?>
+    <style>
+    .spa-meta-row { display: flex; margin-bottom: 15px; align-items: flex-start; }
+    .spa-meta-row label { width: 150px; font-weight: 600; padding-top: 8px; }
+    .spa-meta-row .spa-field { flex: 1; }
+    .spa-section { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 20px; }
+    .spa-section h4 { margin: 0 0 15px 0; }
+    .spa-stars { font-size: 24px; cursor: pointer; }
+    .spa-stars span { color: #ddd; transition: color 0.2s; }
+    .spa-stars span.active { color: #FFD700; }
+    </style>
+    
+    <div class="spa-section">
+        <h4>📋 Základné údaje</h4>
+        
+        <div class="spa-meta-row">
+            <label for="spa_att_date">Dátum tréningu:</label>
+            <div class="spa-field">
+                <input type="date" name="spa_att_date" id="spa_att_date" value="<?php echo esc_attr($date ?: date('Y-m-d')); ?>">
+            </div>
+        </div>
+        
+        <div class="spa-meta-row">
+            <label for="spa_att_status">Status:</label>
+            <div class="spa-field">
+                <select name="spa_att_status" id="spa_att_status">
+                    <option value="present" <?php selected($status, 'present'); ?>>✅ Prítomný</option>
+                    <option value="absent" <?php selected($status, 'absent'); ?>>❌ Neprítomný</option>
+                    <option value="excused" <?php selected($status, 'excused'); ?>>📝 Ospravedlnený</option>
+                    <option value="late" <?php selected($status, 'late'); ?>>⏰ Meškanie</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="spa-section">
+        <h4>⭐ Hodnotenie trénera</h4>
+        
+        <div class="spa-meta-row">
+            <label>Hviezdičky:</label>
+            <div class="spa-field">
+                <div class="spa-stars" id="spa_stars_container">
+                    <?php for ($i = 1; $i <= 5; $i++) : ?>
+                        <span data-value="<?php echo $i; ?>" class="<?php echo ($stars >= $i) ? 'active' : ''; ?>">★</span>
+                    <?php endfor; ?>
+                </div>
+                <input type="hidden" name="spa_att_stars" id="spa_att_stars" value="<?php echo esc_attr($stars); ?>">
+                <p class="spa-help">Pochvala za tréning (1-5 hviezdičiek)</p>
+            </div>
+        </div>
+        
+        <div class="spa-meta-row">
+            <label for="spa_att_points">Body:</label>
+            <div class="spa-field">
+                <input type="number" name="spa_att_points" id="spa_att_points" value="<?php echo esc_attr($points); ?>" min="0" max="100" style="width: 80px;">
+                <p class="spa-help">Bonusové body za účasť (gamifikácia)</p>
+            </div>
+        </div>
+        
+        <div class="spa-meta-row">
+            <label for="spa_att_rating">Slovné hodnotenie:</label>
+            <div class="spa-field">
+                <textarea name="spa_att_rating" id="spa_att_rating" rows="3" placeholder="Krátke hodnotenie od trénera..."><?php echo esc_textarea($rating); ?></textarea>
+            </div>
+        </div>
+        
+        <div class="spa-meta-row">
+            <label for="spa_att_note">Interná poznámka:</label>
+            <div class="spa-field">
+                <textarea name="spa_att_note" id="spa_att_note" rows="2" placeholder="Poznámka pre admina (nie je viditeľná pre rodiča)"><?php echo esc_textarea($note); ?></textarea>
+            </div>
+        </div>
+    </div>
+    
+    <script>
     (function() {
-        var targetUrl = '<?php echo $url; ?>';
-        var addBtn = document.querySelector('.page-title-action[href*="post-new.php?post_type=spa_registration"]');
-        if (addBtn) {
-            addBtn.setAttribute('href', targetUrl);
-            addBtn.setAttribute('target', '_blank');
-        }
-        var menuLinks = document.querySelectorAll('#adminmenu a[href*="post-new.php?post_type=spa_registration"]');
-        menuLinks.forEach(function(link) {
-            link.setAttribute('href', targetUrl);
-            link.setAttribute('target', '_blank');
+        var container = document.getElementById('spa_stars_container');
+        var input = document.getElementById('spa_att_stars');
+        var stars = container.querySelectorAll('span');
+        
+        stars.forEach(function(star) {
+            star.addEventListener('click', function() {
+                var value = this.getAttribute('data-value');
+                input.value = value;
+                
+                stars.forEach(function(s) {
+                    if (parseInt(s.getAttribute('data-value')) <= parseInt(value)) {
+                        s.classList.add('active');
+                    } else {
+                        s.classList.remove('active');
+                    }
+                });
+            });
         });
     })();
     </script>
     <?php
 }
 
-add_action('admin_init', 'spa_redirect_new_registration');
-function spa_redirect_new_registration() {
-    global $pagenow;
-    if ($pagenow === 'post-new.php' && isset($_GET['post_type']) && $_GET['post_type'] === 'spa_registration') {
-        wp_redirect(home_url('/registracia/'));
-        exit;
-    }
-}
-
-/* ==========================
-   SKRY TITLE EDITOR pre registracie
-   ========================== */
-
-add_action('admin_head-post.php', 'spa_hide_title_editor');
-add_action('admin_head-post-new.php', 'spa_hide_title_editor');
-function spa_hide_title_editor() {
-    global $typenow;
-    if ($typenow === 'spa_registration') {
-        echo '<style>#titlediv { display: none !important; }</style>';
-    }
-}
-
-/* ==========================
-   ADD META BOXES
-   ========================== */
-
-add_action('add_meta_boxes', 'spa_add_all_meta_boxes');
-function spa_add_all_meta_boxes() {
+/* ============================================================
+   META BOX: CENNÍK PROGRAMU (spa_group) - NOVÉ
+   Cena za 1x a 2x týždenne
+   ============================================================ */
+function spa_group_pricing_meta_box($post) {
+    wp_nonce_field('spa_save_group_pricing', 'spa_group_pricing_nonce');
     
-    // REGISTRACIE
-    add_meta_box(
-        'spa_registration_details',
-        get_spa_svg_icon(25).'Detaily registrácie',
-        'spa_registration_details_callback',
-        'spa_registration',
-        'normal',
-        'high'
-    );
-    
-    // SKUPINY TRENINGOV - KOMPLETNY META BOX
-    add_meta_box(
-        'spa_group_details',
-        get_spa_svg_icon(25).'Detaily programu',
-        'spa_group_details_callback',
-        'spa_group',
-        'normal',
-        'high'
-    );
-}
-
-/* ==========================
-   SKUPINY TRENINGOV - META BOX
-   SVG ikona, cena, kapacita, rozvrh, treneri
-   ========================== */
-
-function spa_group_details_callback($post) {
-    wp_nonce_field('spa_save_group', 'spa_group_nonce');
-    
-    // Nacitaj ulozene data
-    $icon = get_post_meta($post->ID, 'spa_icon', true);
-    $price = get_post_meta($post->ID, 'spa_price', true);
-    $capacity = get_post_meta($post->ID, 'spa_capacity', true);
-    $schedule_json = get_post_meta($post->ID, 'spa_schedule', true);
-    $schedule = $schedule_json ? json_decode($schedule_json, true) : [];
-    $trainer_ids = get_post_meta($post->ID, 'spa_trainer_ids', true);
-    if (!is_array($trainer_ids)) {
-        $trainer_ids = $trainer_ids ? array($trainer_ids) : array();
-    }
-    
-    // SVG ikony z adresara
-    $svg_dir = WP_CONTENT_DIR . '/uploads/spa-icons/';
-    $svg_files = array();
-    if (is_dir($svg_dir)) {
-        $files = scandir($svg_dir);
-        foreach ($files as $file) {
-            if (pathinfo($file, PATHINFO_EXTENSION) === 'svg') {
-                $svg_files[] = $file;
-            }
-        }
-    }
-    
-    // Treneri
-    $trainers = get_users(array('role' => 'spa_trainer', 'orderby' => 'display_name'));
-    
-    // Dni tyzdna
-    $days = array(
-        'monday' => 'Pondelok',
-        'tuesday' => 'Utorok',
-        'wednesday' => 'Streda',
-        'thursday' => 'Stvrtok',
-        'friday' => 'Piatok',
-        'saturday' => 'Sobota',
-        'sunday' => 'Nedela'
-    );
+    $price_1x = get_post_meta($post->ID, 'spa_price_1x_weekly', true);
+    $price_2x = get_post_meta($post->ID, 'spa_price_2x_weekly', true);
+    $price_monthly = get_post_meta($post->ID, 'spa_price_monthly', true);
+    $price_semester = get_post_meta($post->ID, 'spa_price_semester', true);
+    $external_surcharge = get_post_meta($post->ID, 'spa_external_surcharge', true);
     
     ?>
     <style>
-    .spa-meta-section { margin-bottom: 25px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; }
-    .spa-meta-section h4 { margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 1px solid #ddd; color: #23282d; }
-    .spa-meta-row { display: flex; align-items: flex-start; margin-bottom: 12px; }
-    .spa-meta-row label { width: 140px; font-weight: 600; padding-top: 6px; }
-    .spa-meta-row .spa-field { flex: 1; }
-    .spa-icon-preview { width: 80px; height: 80px; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #fff; margin-left: 10px; }
-    .spa-icon-preview svg { width: 69px; height: 69px; }
-    .spa-schedule-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
-    .spa-schedule-row select, .spa-schedule-row input { padding: 6px 10px; }
-    .spa-trainer-checkboxes label { display: block; margin-bottom: 5px; font-weight: normal; }
-    .spa-trainer-checkboxes input { margin-right: 8px; }
-    .spa-help { color: #666; font-size: 12px; margin-top: 4px; }
+    .spa-pricing-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .spa-price-box { background: #fff; border: 2px solid #ddd; padding: 15px; border-radius: 8px; }
+    .spa-price-box h5 { margin: 0 0 10px 0; color: #333; }
+    .spa-price-box input { width: 100px; padding: 8px; font-size: 16px; font-weight: bold; }
+    .spa-price-box .currency { font-size: 16px; margin-left: 5px; }
     </style>
     
-    <!-- SVG IKONA -->
-    <div>        
-        <div class="spa-meta-row">
-            <label>🤸🏻‍♂️ Ikona programu:</label>
-            <div class="spa-field" style="display: flex; align-items: center;">
-                <?php if (empty($svg_files)) : ?>
-                    <p style="color: #d63638; margin: 0;">
-                        Žiadne ikony v adresári ikon
-                    </p>
-                    <input type="hidden" name="spa_icon" value="">
-                <?php else : ?>
-                    <select name="spa_icon" id="spa_icon_select" style="width: 250px;">
-                        <option value="">-- Bez ikony --</option>
-                        <?php foreach ($svg_files as $file) : 
-                            $name = pathinfo($file, PATHINFO_FILENAME);
-                        ?>
-                            <option value="<?php echo esc_attr($file); ?>" <?php selected($icon, $file); ?>>
-                                <?php echo esc_html($name); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <div class="spa-icon-preview" id="spa_icon_preview">
-                        <?php if ($icon && file_exists($svg_dir . $icon)) : ?>
-                            <?php echo file_get_contents($svg_dir . $icon); ?>
-                        <?php else : ?>
-                            <span style="color:#999;">--</span>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
+    <div class="spa-pricing-grid">
+        <div class="spa-price-box">
+            <h5>💰 Cena za 1x týždenne</h5>
+            <input type="number" name="spa_price_1x_weekly" value="<?php echo esc_attr($price_1x); ?>" step="0.01" min="0">
+            <span class="currency">€</span>
+            <p class="spa-help">Mesačná cena pri jednom tréningu týždenne</p>
+        </div>
+        
+        <div class="spa-price-box">
+            <h5>💰 Cena za 2x týždenne</h5>
+            <input type="number" name="spa_price_2x_weekly" value="<?php echo esc_attr($price_2x); ?>" step="0.01" min="0">
+            <span class="currency">€</span>
+            <p class="spa-help">Mesačná cena pri dvoch tréningoch týždenne (zvýhodnená)</p>
+        </div>
+        
+        <div class="spa-price-box">
+            <h5>📅 Cena mesačne (paušál)</h5>
+            <input type="number" name="spa_price_monthly" value="<?php echo esc_attr($price_monthly); ?>" step="0.01" min="0">
+            <span class="currency">€</span>
+            <p class="spa-help">Voliteľné - fixná mesačná cena</p>
+        </div>
+        
+        <div class="spa-price-box">
+            <h5>🎓 Cena za semester</h5>
+            <input type="number" name="spa_price_semester" value="<?php echo esc_attr($price_semester); ?>" step="0.01" min="0">
+            <span class="currency">€</span>
+            <p class="spa-help">Voliteľné - cena za celý školský polrok</p>
         </div>
     </div>
     
-    <!-- CENA A KAPACITA -->
-    <div class="spa-meta-section">
-        <h4>🎲 Cena programu a kapacita</h4>
-        <div class="spa-meta-row">
-            <label for="spa_price">💳 Cena (EUR):</label>
-            <div class="spa-field">
-                <input type="text" name="spa_price" id="spa_price" value="<?php echo esc_attr($price); ?>" style="width: 100px;">
-                <span class="spa-help">napr. 30 alebo 45,50</span>
-            </div>
-        </div>
-        <div class="spa-meta-row">
-            <label for="spa_capacity">𐀪𐀪 Kapacita:</label>
-            <div class="spa-field">
-                <input type="number" name="spa_capacity" id="spa_capacity" value="<?php echo esc_attr($capacity); ?>" style="width: 100px;" min="1">
-                <span class="spa-help">max. počet účastníkov tréningu</span>
-            </div>
-        </div>    
-    
-    <!-- ROZVRH -->
-        <br><br>
-        <h4>📅 Rozvrh tréningov programu</h4>
-        <div id="spa-schedule-repeater">
-            <?php 
-            if (!empty($schedule) && is_array($schedule)) {
-                foreach ($schedule as $i => $row) {
-                    spa_schedule_row_html($i, $row, $days);
-                }
-            } else {
-                spa_schedule_row_html(0, array(), $days);
-            }
-            ?>
-        </div>
-        <p style="margin-top: 10px;">
-            <button type="button" class="button" id="spa-add-schedule">+ Pridať termín</button>
-            <button type="button" class="button" id="spa-remove-schedule">- Odstrániť posledný</button>
-        </p>
-        
-    <!-- TRENERI -->
-        <br><br>
-        <h4>👟 Pridelení tréneri</h4>
-        <div class="spa-trainer-checkboxes">
-            <?php if (empty($trainers)) : ?>
-                <p style="color: #666;">Ziadni treneri nie su registrovani.</p>
-            <?php else : ?>
-                <?php foreach ($trainers as $trainer) : 
-                    $name = trim($trainer->first_name . ' ' . $trainer->last_name);
-                    if (empty($name)) $name = $trainer->display_name;
-                    $checked = in_array($trainer->ID, $trainer_ids) ? 'checked' : '';
-                ?>
-                    <label>
-                        <input type="checkbox" name="spa_trainer_ids[]" value="<?php echo $trainer->ID; ?>" <?php echo $checked; ?>>
-                        <?php echo esc_html($name); ?>
-                    </label>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
-        <p class="spa-help">Mozes vybrat viacerych trenerov pre jeden program.</p>
-    </div>
-    
-    <!-- JAVASCRIPT -->
-    <script>
-    (function() {
-        // SVG PREVIEW
-        var iconSelect = document.getElementById('spa_icon_select');
-        var iconPreview = document.getElementById('spa_icon_preview');
-        
-        if (iconSelect && iconPreview) {
-            iconSelect.addEventListener('change', function() {
-                var file = this.value;
-                if (!file) {
-                    iconPreview.innerHTML = '<span style="color:#999;">--</span>';
-                    return;
-                }
-                fetch('<?php echo admin_url("admin-ajax.php"); ?>?action=spa_preview_svg&file=' + encodeURIComponent(file))
-                    .then(function(r) { return r.text(); })
-                    .then(function(svg) { iconPreview.innerHTML = svg; })
-                    .catch(function() { iconPreview.innerHTML = '<span style="color:#d63638;">Chyba</span>'; });
-            });
-        }
-        
-        // SCHEDULE REPEATER
-        var repeater = document.getElementById('spa-schedule-repeater');
-        var addBtn = document.getElementById('spa-add-schedule');
-        var remBtn = document.getElementById('spa-remove-schedule');
-        
-        if (addBtn) {
-            addBtn.addEventListener('click', function() {
-                var index = repeater.querySelectorAll('.spa-schedule-row').length;
-                var row = document.createElement('div');
-                row.className = 'spa-schedule-row';
-                row.innerHTML = `
-                    <select name="spa_schedule[${index}][day]">
-                        <option value="">-- Den --</option>
-                        <option value="monday">Pondelok</option>
-                        <option value="tuesday">Utorok</option>
-                        <option value="wednesday">Streda</option>
-                        <option value="thursday">Stvrtok</option>
-                        <option value="friday">Piatok</option>
-                        <option value="saturday">Sobota</option>
-                        <option value="sunday">Nedela</option>
-                    </select>
-                    <input type="time" name="spa_schedule[${index}][time]" style="width: 120px;">
-                `;
-                repeater.appendChild(row);
-            });
-        }
-        
-        if (remBtn) {
-            remBtn.addEventListener('click', function() {
-                var rows = repeater.querySelectorAll('.spa-schedule-row');
-                if (rows.length > 1) {
-                    rows[rows.length - 1].remove();
-                }
-            });
-        }
-    })();
-    </script>
-    <?php
-}
-
-// Helper: Vykresli riadok rozvrhu
-function spa_schedule_row_html($index, $row, $days) {
-    $day = isset($row['day']) ? $row['day'] : '';
-    $time = isset($row['time']) ? $row['time'] : '';
-    ?>
-    <div class="spa-schedule-row">
-        <select name="spa_schedule[<?php echo $index; ?>][day]">
-            <option value="">-- Den --</option>
-            <?php foreach ($days as $key => $label) : ?>
-                <option value="<?php echo $key; ?>" <?php selected($day, $key); ?>><?php echo $label; ?></option>
-            <?php endforeach; ?>
-        </select>
-        <input type="time" name="spa_schedule[<?php echo $index; ?>][time]" value="<?php echo esc_attr($time); ?>" style="width: 120px;">
+    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
+        <h5 style="margin: 0 0 10px 0;">🏫 Príplatok za externé priestory</h5>
+        <input type="number" name="spa_external_surcharge" value="<?php echo esc_attr($external_surcharge); ?>" step="0.01" min="0" style="width: 80px;">
+        <span class="currency">€</span>
+        <p class="spa-help" style="margin-top: 5px;">Príplatok k cene ak sa tréning koná v externých priestoroch (prenájom)</p>
     </div>
     <?php
 }
 
-/* ==========================
-   SKUPINY - SAVE
-   ========================== */
+/* ============================================================
+   ULOŽENIE META HODNÔT
+   ============================================================ */
 
-add_action('save_post_spa_group', 'spa_save_group_meta', 10, 2);
-function spa_save_group_meta($post_id, $post) {
+// MIESTO (spa_place)
+add_action('save_post_spa_place', 'spa_save_place_meta', 10, 2);
+function spa_save_place_meta($post_id, $post) {
+    if (!isset($_POST['spa_place_nonce']) || !wp_verify_nonce($_POST['spa_place_nonce'], 'spa_save_place')) return;
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
     
-    if (!isset($_POST['spa_group_nonce']) || !wp_verify_nonce($_POST['spa_group_nonce'], 'spa_save_group')) {
-        return;
-    }
+    $fields = array('spa_place_type', 'spa_place_city', 'spa_place_address', 'spa_place_gps_lat', 'spa_place_gps_lng', 'spa_place_contact', 'spa_place_notes');
     
-    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-        return;
-    }
-    
-    if (!current_user_can('edit_post', $post_id)) {
-        return;
-    }
-    
-    // Ikona
-    if (isset($_POST['spa_icon'])) {
-        update_post_meta($post_id, 'spa_icon', sanitize_text_field($_POST['spa_icon']));
-    }
-    
-    // Cena
-    if (isset($_POST['spa_price'])) {
-        $price = str_replace(',', '.', $_POST['spa_price']);
-        update_post_meta($post_id, 'spa_price', floatval($price));
-    }
-    
-    // Kapacita
-    if (isset($_POST['spa_capacity'])) {
-        update_post_meta($post_id, 'spa_capacity', intval($_POST['spa_capacity']));
+    foreach ($fields as $field) {
+        if (isset($_POST[$field])) {
+            update_post_meta($post_id, $field, sanitize_text_field($_POST[$field]));
+        }
     }
     
     // Rozvrh (JSON)
-    if (isset($_POST['spa_schedule']) && is_array($_POST['spa_schedule'])) {
+    if (isset($_POST['spa_place_schedule']) && is_array($_POST['spa_place_schedule'])) {
         $schedule = array();
-        foreach ($_POST['spa_schedule'] as $row) {
-            $day = sanitize_text_field($row['day']);
-            $time = sanitize_text_field($row['time']);
-            if (!empty($day) || !empty($time)) {
-                $schedule[] = array('day' => $day, 'time' => $time);
+        foreach ($_POST['spa_place_schedule'] as $day => $data) {
+            if (!empty($data['from']) || !empty($data['to'])) {
+                $schedule[$day] = array(
+                    'from' => sanitize_text_field($data['from']),
+                    'to' => sanitize_text_field($data['to']),
+                    'capacity' => intval($data['capacity'] ?? 0),
+                    'active' => !empty($data['active'])
+                );
             }
         }
-        update_post_meta($post_id, 'spa_schedule', wp_json_encode($schedule));
-    }
-    
-    // Treneri (array)
-    if (isset($_POST['spa_trainer_ids'])) {
-        $trainer_ids = array_map('intval', $_POST['spa_trainer_ids']);
-        update_post_meta($post_id, 'spa_trainer_ids', $trainer_ids);
-    } else {
-        delete_post_meta($post_id, 'spa_trainer_ids');
+        update_post_meta($post_id, 'spa_place_schedule', wp_json_encode($schedule));
     }
 }
 
-/* ==========================
-   AJAX: SVG Preview
-   ========================== */
-
-add_action('wp_ajax_spa_preview_svg', 'spa_ajax_preview_svg');
-function spa_ajax_preview_svg() {
-    $file = isset($_GET['file']) ? sanitize_file_name($_GET['file']) : '';
-    $svg_path = WP_CONTENT_DIR . '/uploads/spa-icons/' . $file;
+// UDALOSŤ (spa_event)
+add_action('save_post_spa_event', 'spa_save_event_meta', 10, 2);
+function spa_save_event_meta($post_id, $post) {
+    if (!isset($_POST['spa_event_nonce']) || !wp_verify_nonce($_POST['spa_event_nonce'], 'spa_save_event')) return;
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
     
-    if ($file && file_exists($svg_path) && pathinfo($file, PATHINFO_EXTENSION) === 'svg') {
-        echo file_get_contents($svg_path);
-    } else {
-        echo '<span style="color:#d63638;">Nenajdene</span>';
-    }
-    wp_die();
-}
-
-/* ==========================
-   REGISTRACIA - META BOX
-   ========================== */
-
-function spa_registration_details_callback($post) {
-    wp_nonce_field('spa_save_registration', 'spa_registration_nonce');
-    
-    $client_id = get_post_meta($post->ID, 'client_user_id', true);
-    $program_id = get_post_meta($post->ID, 'program_id', true);
-    $parent_id = get_post_meta($post->ID, 'parent_user_id', true);
-    $status = get_post_meta($post->ID, 'status', true);
-    
-    $client = $client_id ? get_userdata($client_id) : null;
-    $program = $program_id ? get_post($program_id) : null;
-    $parent = $parent_id ? get_userdata($parent_id) : null;
-    
-    $vs = $client_id ? get_user_meta($client_id, 'variabilny_symbol', true) : '';
-    $pin = $client_id ? get_user_meta($client_id, 'spa_pin_plain', true) : '';
-    $phone = $parent_id ? get_user_meta($parent_id, 'phone', true) : '';
-    
-    $all_programs = get_posts(array('post_type' => 'spa_group', 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC'));
-    
-    $statuses = array(
-        'pending' => '⏳ Čaká na schválenie',
-        'approved' => '✅ Schválené',
-        'active' => '🟢 Aktívny',
-        'cancelled' => '❌ Zrušené',
-        'completed' => '✔ Zaregistrované'
+	$fields = array(
+	'spa_event_place_id' => 'intval',
+	'spa_event_type' => 'sanitize_text_field',
+	'spa_event_date_from' => 'sanitize_text_field',
+	'spa_event_date_to' => 'sanitize_text_field',
+	'spa_event_time_from' => 'sanitize_text_field',
+	'spa_event_time_to' => 'sanitize_text_field',
+	'spa_event_recurring' => 'sanitize_text_field'
     );
     
-    $client_name = $client ? trim($client->first_name . ' ' . $client->last_name) : '';
-    if ($client && empty($client_name)) $client_name = $client->display_name;
-    
-    $parent_name = $parent ? trim($parent->first_name . ' ' . $parent->last_name) : '';
-    if ($parent && empty($parent_name)) $parent_name = $parent->display_name;
-    
-    $place_str = '';
-    if ($program_id) {
-        $places = get_the_terms($program_id, 'spa_place');
-        if ($places && !is_wp_error($places)) {
-            $names = array();
-            foreach ($places as $place) { $names[] = $place->name; }
-            $place_str = implode(', ', $names);
+    foreach ($fields as $key => $sanitize) {
+        if (isset($_POST[$key])) {
+            $value = ($sanitize === 'intval') ? intval($_POST[$key]) : sanitize_text_field($_POST[$key]);
+            update_post_meta($post_id, $key, $value);
         }
     }
     
-    ?>
-    <style>
-    .spa-reg-table { width: 100%; max-width: 600px; border-collapse: collapse; }
-    .spa-reg-table th { padding: 8px; width: 100px; background: #f9f9f9; border: 1px solid #ddd; font-weight: 400;}
-    .spa-reg-table td { padding: 8px; border: 1px solid #ddd; }
-    .spa-edit-box { margin-top: 20px; padding: 15px; background: #fff8e5; border: 1px solid #f0ad4e; border-radius: 4px; max-width: 550px; }
-    </style>
-    
-    <table class="spa-reg-table">
-        <tr><th style="text-align:right">👶 Dieťa / Klient</th><td><strong><?php echo $client_name ?: '--'; ?></strong></td></tr>
-        <tr><th style="text-align:right">#️ VS</th><td><?php echo $vs ?: '--'; ?></td></tr>
-        <tr><th style="text-align:right">#️ PIN</th><td><?php echo $pin ?: '--'; ?></td></tr>
-        <tr><th style="text-align:right">📍 Miesto</th><td><?php echo $place_str ?: '--'; ?></td></tr>
-        <tr><th style="text-align:right">👨‍👩‍👧 Rodič</th><td><?php echo $parent_name ?: '--'; ?></td></tr>
-        <tr><th style="text-align:right">📧 E-mail</th><td><?php echo $parent ? $parent->user_email : '--'; ?></td></tr>
-        <tr><th style="text-align:right">🕻 Telefón</th><td><?php echo $phone ?: '--'; ?></td></tr>
-    </table>
-    
-    <p style="margin-top: 15px;">
-        <?php if ($client_id) : ?><a href="<?php echo get_edit_user_link($client_id); ?>" class="button" target="_blank">Upraviť profil dieťata/klienta</a><?php endif; ?>
-        <?php if ($parent_id) : ?><a href="<?php echo get_edit_user_link($parent_id); ?>" class="button" target="_blank">Upraviť profil rodiča</a><?php endif; ?>
-    </p>
-    
-    <div class="spa-edit-box">
-        <p><strong>Úprava tréningového programu</strong></p>
-        <p>
-            <label>Program:</label><br>
-            <select name="spa_program_id" style="width: 100%; max-width: 400px;">
-                <?php foreach ($all_programs as $prog) : ?>
-                    <option value="<?php echo $prog->ID; ?>" <?php selected($program_id, $prog->ID); ?>><?php echo esc_html($prog->post_title); ?></option>
-                <?php endforeach; ?>
-            </select>
-        </p>
-        <p>
-            <label>Status:</label><br>
-            <select name="spa_status" style="width: 200px;">
-                <?php foreach ($statuses as $key => $label) : ?>
-                    <option value="<?php echo $key; ?>" <?php selected($status, $key); ?>><?php echo $label; ?></option>
-                <?php endforeach; ?>
-            </select>
-        </p>
-    </div>
-    <?php
+    // Checkbox all_day
+    update_post_meta($post_id, 'spa_event_all_day', isset($_POST['spa_event_all_day']) ? 1 : 0);
 }
 
-/* ==========================
-   REGISTRACIA - SAVE
-   ========================== */
-
-add_action('save_post_spa_registration', 'spa_save_registration_meta', 10, 2);
-function spa_save_registration_meta($post_id, $post) {
+// DOCHÁDZKA (spa_attendance)
+add_action('save_post_spa_attendance', 'spa_save_attendance_meta', 10, 2);
+function spa_save_attendance_meta($post_id, $post) {
+    if (!isset($_POST['spa_attendance_nonce']) || !wp_verify_nonce($_POST['spa_attendance_nonce'], 'spa_save_attendance')) return;
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
     
-    if (!isset($_POST['spa_registration_nonce']) || !wp_verify_nonce($_POST['spa_registration_nonce'], 'spa_save_registration')) {
-        return;
-    }
+    $fields = array(
+        'spa_att_client_id' => 'intval',
+        'spa_att_program_id' => 'intval',
+        'spa_att_registration_id' => 'intval',
+        'spa_att_date' => 'sanitize_text_field',
+        'spa_att_status' => 'sanitize_text_field',
+        'spa_att_stars' => 'intval',
+        'spa_att_points' => 'intval',
+        'spa_att_rating' => 'sanitize_textarea_field',
+        'spa_att_note' => 'sanitize_textarea_field'
+    );
     
-    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-        return;
-    }
-    
-    if (!current_user_can('edit_post', $post_id)) {
-        return;
-    }
-    
-    $title_changed = false;
-    
-    if (isset($_POST['spa_program_id'])) {
-        $new_program_id = intval($_POST['spa_program_id']);
-        $old_program_id = get_post_meta($post_id, 'program_id', true);
-        if ($new_program_id != $old_program_id) {
-            update_post_meta($post_id, 'program_id', $new_program_id);
-            $title_changed = true;
+    foreach ($fields as $key => $sanitize) {
+        if (isset($_POST[$key])) {
+            if ($sanitize === 'intval') {
+                $value = intval($_POST[$key]);
+            } elseif ($sanitize === 'sanitize_textarea_field') {
+                $value = sanitize_textarea_field($_POST[$key]);
+            } else {
+                $value = sanitize_text_field($_POST[$key]);
+            }
+            update_post_meta($post_id, $key, $value);
         }
     }
     
-    if (isset($_POST['spa_status'])) {
-        update_post_meta($post_id, 'status', sanitize_text_field($_POST['spa_status']));
-    }
+    // Automatický title
+    $client_id = intval($_POST['spa_att_client_id'] ?? 0);
+    $date = sanitize_text_field($_POST['spa_att_date'] ?? '');
     
-    if ($title_changed) {
-        $client_id = get_post_meta($post_id, 'client_user_id', true);
-        $program_id = intval($_POST['spa_program_id']);
-        $client = get_userdata($client_id);
-        $program = get_post($program_id);
-        
-        if ($client && $program) {
-            $client_name = trim($client->first_name . ' ' . $client->last_name);
-            if (empty($client_name)) $client_name = $client->display_name;
-            $new_title = $client_name . ' - ' . $program->post_title;
+    if ($client_id && $date) {
+        $user = get_userdata($client_id);
+        if ($user) {
+            $name = trim($user->first_name . ' ' . $user->last_name);
+            if (empty($name)) $name = $user->display_name;
+            $new_title = $name . ' - ' . date_i18n('j.n.Y', strtotime($date));
             
-            remove_action('save_post_spa_registration', 'spa_save_registration_meta', 10);
+            remove_action('save_post_spa_attendance', 'spa_save_attendance_meta', 10);
             wp_update_post(array('ID' => $post_id, 'post_title' => $new_title));
-            add_action('save_post_spa_registration', 'spa_save_registration_meta', 10, 2);
+            add_action('save_post_spa_attendance', 'spa_save_attendance_meta', 10, 2);
         }
+    }
+}
+
+// CENNÍK PROGRAMU (spa_group)
+add_action('save_post_spa_group', 'spa_save_group_pricing_meta', 10, 2);
+function spa_save_group_pricing_meta($post_id, $post) {
+    if (!isset($_POST['spa_group_pricing_nonce']) || !wp_verify_nonce($_POST['spa_group_pricing_nonce'], 'spa_save_group_pricing')) return;
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
+    
+    $price_fields = array(
+        'spa_price_1x_weekly',
+        'spa_price_2x_weekly',
+        'spa_price_monthly',
+        'spa_price_semester',
+        'spa_external_surcharge'
+    );
+    
+    foreach ($price_fields as $field) {
+        if (isset($_POST[$field])) {
+            $value = floatval(str_replace(',', '.', $_POST[$field]));
+            update_post_meta($post_id, $field, $value);
+        }
+    }
+    
+    // Spätná kompatibilita - ulož aj do spa_price (1x weekly ako default)
+    if (isset($_POST['spa_price_1x_weekly'])) {
+        $price = floatval(str_replace(',', '.', $_POST['spa_price_1x_weekly']));
+        update_post_meta($post_id, 'spa_price', $price);
     }
 }
