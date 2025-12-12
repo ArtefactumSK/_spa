@@ -170,7 +170,7 @@ add_filter('manage_spa_group_posts_columns', 'spa_grp_columns');
 function spa_grp_columns($columns) {
     return array(
         'cb'          => $columns['cb'],
-        'title'       => '🤸🏻‍♂️ Nazov',
+        'title'       => '🤸🏻‍♂️ Nazov',spa_grp_column_data
         'grp_place'   => '📍Miesto, špec.',
         'grp_cat'     => '☆Kategória',
         'grp_price'   => '💳 Cena',
@@ -181,9 +181,97 @@ function spa_grp_columns($columns) {
 
 add_action('manage_spa_group_posts_custom_column', 'spa_grp_column_data', 10, 2);
 function spa_grp_column_data($column, $post_id) {
-    
+    case 'grp_city':
+    $city = get_post_meta($post_id, 'spa_place_city', true);
+    echo $city ? esc_html($city) : '-';
+    break;
+
+case 'grp_place':
+    $place_id = get_post_meta($post_id, 'spa_place_id', true);
+    if ($place_id) {
+        $place = get_post($place_id);
+        echo $place ? esc_html($place->post_title) : '-';
+    } else {
+        echo '-';
+    }
+    break;
+
+case 'grp_age':
+    $age_from = get_post_meta($post_id, 'spa_age_from', true);
+    $age_to = get_post_meta($post_id, 'spa_age_to', true);
+    if ($age_from && $age_to) {
+        echo esc_html($age_from . '-' . $age_to);
+    } else {
+        echo '-';
+    }
+    break;
+
+case 'grp_capacity':
+    $cap = get_post_meta($post_id, 'spa_capacity', true);
+    echo $cap ? intval($cap) : '-';
+    break;
+
+case 'grp_schedule':
+    $schedule_json = get_post_meta($post_id, 'spa_schedule', true);
+    if ($schedule_json) {
+        $schedule = json_decode($schedule_json, true);
+        $days_sk = ['monday' => 'Pondelok', 'tuesday' => 'Utorok', 'wednesday' => 'Streda', 
+                    'thursday' => 'Štvrtok', 'friday' => 'Piatok', 'saturday' => 'Sobota', 'sunday' => 'Nedeľa'];
+        $output = [];
+        foreach ($schedule as $item) {
+            if (!empty($item['day']) && !empty($item['from'])) {
+                $day_label = isset($days_sk[$item['day']]) ? $days_sk[$item['day']] : $item['day'];
+                $output[] = $day_label . ' od ' . $item['from'];
+            }
+        }
+        echo !empty($output) ? esc_html(implode(', ', $output)) : '-';
+    } else {
+        echo '-';
+    }
+    break;
+
+case 'grp_trainers':
+    $trainers = get_post_meta($post_id, 'spa_trainers', true);
+    if (is_array($trainers) && !empty($trainers)) {
+        $names = [];
+        foreach ($trainers as $trainer_id) {
+            $trainer = get_userdata($trainer_id);
+            if ($trainer) {
+                $names[] = $trainer->display_name;
+            }
+        }
+        echo !empty($names) ? esc_html(implode(', ', $names)) : '-';
+    } else {
+        echo '-';
+    }
+    break;
+
+case 'grp_price':
+    $price_1x = get_post_meta($post_id, 'spa_price_1x_weekly', true);
+    $price_2x = get_post_meta($post_id, 'spa_price_2x_weekly', true);
+    $prices = [];
+    if ($price_1x) $prices[] = number_format(floatval($price_1x), 0) . '€';
+    if ($price_2x) $prices[] = number_format(floatval($price_2x), 0) . '€';
+    echo !empty($prices) ? esc_html(implode(', ', $prices)) : '-';
+    break;
+    /* 
     switch ($column) {
+        case 'grp_city':
+            $city = get_post_meta($post_id, 'spa_place_city', true);
+            echo $city ? esc_html($city) : '-';
+            break;
         
+        case 'grp_place':
+            $place_id = get_post_meta($post_id, 'spa_place_id', true);
+            if ($place_id) {
+                $place = get_post($place_id);
+                echo $place ? esc_html($place->post_title) : '-';
+            } else {
+                echo '-';
+            }
+            break;    
+        
+            
         case 'grp_place':
             $places = get_the_terms($post_id, 'spa_place');
             if ($places && !is_wp_error($places)) {
@@ -223,5 +311,6 @@ function spa_grp_column_data($column, $post_id) {
             ));
             echo intval($count);
             break;
-    }
+            
+    } */
 }
