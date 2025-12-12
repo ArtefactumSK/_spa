@@ -137,8 +137,24 @@ function spa_group_column_content($column, $post_id) {
     switch ($column) {
         
         case 'grp_city':
-            $city = get_post_meta($post_id, 'spa_place_city', true);
-            echo $city ? esc_html($city) : '-';
+            $place_id = get_post_meta($post_id, 'spa_place_id', true);
+            if ($place_id) {
+                $place = get_post($place_id);
+                if ($place) {
+                    $city = get_post_meta($place->ID, 'spa_place_city', true);
+                    echo $city ? esc_html($city) : '-';
+                } else {
+                    echo '-';
+                }
+            } else {
+                // Fallback na taxonómiu (starý systém)
+                $places = get_the_terms($post_id, 'spa_place');
+                if ($places && !is_wp_error($places)) {
+                    echo esc_html($places[0]->name);
+                } else {
+                    echo '-';
+                }
+            }
             break;
         
         case 'grp_place':
