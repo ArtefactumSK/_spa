@@ -1,0 +1,47 @@
+FRONTEND FLOW (registrácia)
+
+KROK 1: Výber kategórie
+└── "Deti s rodičmi 1,8–3 roky"
+
+KROK 2: Výber programu (filtrovaný podľa kategórie)
+└── "Šikulkovia s rodičmi" (ZŠ Drábova 3, Košice)
+
+KROK 3: Výber frekvencie
+└── [1x týždenne] [2x týždenne]
+    └── Ak 1x: vyber deň (Ut ALEBO Št)
+    └── Ak 2x: automaticky oba dni
+
+KROK 4: Výber obdobia (kalendár)
+├── Dátum OD: [15.1.2025]
+└── Dátum DO: [30.6.2025]
+
+KROK 5: Výpočet a súhrn
+├── Obdobie: 15.1. - 30.6.2025
+├── Počet týždňov: 24
+├── Tréningy celkom: 48 (2x týždenne)
+├── Mínus blokované: -3 (sviatky, súťaže)
+├── Reálny počet: 45 tréningov
+├── Cena/týždeň: 50 € (Malacky) alebo 40 € (Košice)
+├── Počet účtovaných týždňov: 24 (alebo 22 ak odpočítame blokované?)
+└── CELKOVÁ CENA: 24 × 50 = 1 200 €
+
+
+
+ŠTRUKTÚRA REGISTRÁCIE (meta polia)
+REGISTRÁCIA: "Janko Mrkvička - Šikulkovia s rodičmi"
+├── client_user_id: 460
+├── parent_user_id: 459
+├── program_id: 49
+├── frequency: 2 (koľko x týždenne)
+├── selected_days: ["tuesday", "thursday"] (JSON)
+├── date_from: 2025-01-15
+├── date_to: 2025-06-30
+├── total_trainings: 48
+├── blocked_trainings: 3
+├── real_trainings: 45
+├── price_per_month: 50
+├── total_price: 275
+├── status: active
+├── payment_status: paid / pending / partial
+├── expiration_date: 2025-06-30 ← DÁTUM EXPIRÁCIE
+└── last_paid_training: 2025-06-26 ← POSLEDNÝ PREDPLATENÝ

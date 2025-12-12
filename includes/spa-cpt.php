@@ -430,9 +430,9 @@ add_filter('manage_spa_place_posts_columns', 'spa_place_columns');
 function spa_place_columns($columns) {
     return array(
         'cb'        => $columns['cb'],
-        'title'     => '📍 Názov miesta',
+        'title'     => 'Názov miesta',
         'type'      => 'Typ',
-        'address'   => 'Adresa',
+        'address'   => '📍 Adresa miesta',
         'programs'  => '🤸 Programov',
         'date'      => 'Dátum'
     );

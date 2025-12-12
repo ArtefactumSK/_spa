@@ -295,10 +295,13 @@ add_action('wp_dashboard_setup', function() {
                 
                 <h4>Rýchle linky:</h4>
                 <ul>
-                    <li><a href="<?php echo admin_url('edit.php?post_type=spa_group'); ?>">📋 Skupiny tréningov</a></li>
-                    <li><a href="<?php echo admin_url('edit.php?post_type=spa_hall_block'); ?>">📅 Obsadenosť hál</a></li>
-                    <li><a href="<?php echo admin_url('widgets.php'); ?>">📢 Bannery (Widgety)</a></li>
-                    <li><a href="<?php echo admin_url('admin.php?page=gf_edit_forms'); ?>">📝 Formuláre</a></li>
+                    <li><a href="<?php echo admin_url('edit.php?post_type=spa_group'); ?>">🤸 Programy SPA</a></li>
+                    <li><a href="<?php echo admin_url('edit.php?post_type=spa_registration'); ?>">📋 Registrácie SPA</a></li>
+                    <li><a href="<?php echo admin_url('edit.php?post_type=spa_hall_block'); ?>">📅 Udalosti SPA</a></li>
+                    <li><a href="<?php echo admin_url('edit.php?post_type=spa_attendance'); ?>">✅ Dochádzka</a></li>
+                    <li><a href="<?php echo admin_url('edit.php?post_type=spa_payment'); ?>">💳 Prehľad platieb</a></li>                    
+                    <!-- <li><a href="<?php echo admin_url('widgets.php'); ?>">📢 Bannery (Widgety)</a></li> -->
+                    <!-- <li><a href="<?php echo admin_url('admin.php?page=gf_edit_forms'); ?>">📝 Formuláre</a></li> -->
                 </ul>
                 
                 <hr>
