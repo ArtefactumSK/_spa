@@ -100,7 +100,7 @@ function spa_extra_user_profile_fields($user) {
     $phone = get_user_meta($user->ID, 'phone', true);
     
     ?>
-    <h2>Údaje <svg class="spa-icon" width="29" height="29" viewBox="20 0 10 90" style="vertical-align: bottom;display: inline-block;"><path d="M36.29,0C-3.91,29.7.49,65.3,32.79,69.8-1.91,69-20.51,38.3,36.29,0Z" fill="var(--theme-palette-color-1, #FF1439)"></path><path d="M16.99,60.2c2.5,1.8,5.1,1.8,5.6-.2s-1.1-5.1-3.7-7-5.1-1.8-5.6.2,1.1,5.1,3.7,7Z" fill="var(--theme-palette-color-1, #FF1439)"></path><path d="M16.49,92.4c40.2-29.7,35.8-65.3,3.5-69.8,34.7.8,53.3,31.5-3.5,69.8Z" fill="var(--theme-palette-color-3, #ff1439)"></path><path d="M48.39,30.5c2.6,1.9,5.1,1.8,5.6-.2s-1.1-5.1-3.7-7-5.1-1.8-5.6.2,1.1,5.1,3.7,7Z" fill="var(--theme-palette-color-3, #ff1439)"></path></svg> Samuel Piasecký ACADEMY</h2>
+    <h2>REGISTER <?php echo get_spa_svg_icon(30); ?> Samuel Piasecký ACADEMY</h2>
     
     <table class="form-table" role="presentation">
         
