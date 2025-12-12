@@ -49,7 +49,7 @@ function spa_register_cpt_registrations() {
     $labels = array(
         'name'                  => 'Registrácie',
         'singular_name'         => 'Registrácia',
-        'menu_name'             => 'Registrácie',
+        'menu_name'             => 'SPA Registrácie',
         'add_new'               => 'Pridať registráciu',
         'add_new_item'          => 'Pridať novú registráciu',
         'edit_item'             => 'Upraviť registráciu',
@@ -81,13 +81,13 @@ function spa_register_cpt_registrations() {
 add_action('init', 'spa_register_cpt_hall_blocks');
 function spa_register_cpt_hall_blocks() {
     $labels = array(
-        'name'          => 'Obsadenost hal',
-        'singular_name' => 'Rezervacia haly',
-        'menu_name'     => 'Obsadenost hal',
-        'add_new'       => 'Pridat rezervaciu',
-        'add_new_item'  => 'Pridat novu rezervaciu',
-        'edit_item'     => 'Upravit rezervaciu',
-        'search_items'  => 'Hladat rezervacie'
+        'name'          => 'Obsadenosť telocvičien',
+        'singular_name' => 'Rezervácia  telocvične',
+        'menu_name'     => 'SPA telocvične',
+        'add_new'       => 'Pridať rezerváciu',
+        'add_new_item'  => 'Rezervovať telocvičňu',
+        'edit_item'     => 'Upraviť rezerváciu',
+        'search_items'  => 'Hľadat rezervácie'
     );
 
     register_post_type('spa_hall_block', array(
@@ -117,14 +117,14 @@ function spa_register_cpt_payments() {
     $labels = array(
         'name'               => 'Platby',
         'singular_name'      => 'Platba',
-        'menu_name'          => 'Platby',
-        'add_new'            => 'Pridat platbu',
-        'add_new_item'       => 'Pridat novu platbu',
-        'edit_item'          => 'Upravit platbu',
-        'view_item'          => 'Zobrazit platbu',
-        'search_items'       => 'Hladat platby',
-        'not_found'          => 'Ziadne platby nenajdene',
-        'all_items'          => 'Vsetky platby'
+        'menu_name'          => 'SPA Platby',
+        'add_new'            => 'Pridať platbu',
+        'add_new_item'       => 'Pridať novú platbu',
+        'edit_item'          => 'Upraviť platbu',
+        'view_item'          => 'Zobraziť platbu',
+        'search_items'       => 'Hľadať platby',
+        'not_found'          => 'Žiadne platby nenájdene',
+        'all_items'          => 'Všetky platby'
     );
 
     register_post_type('spa_payment', array(
@@ -156,12 +156,12 @@ function spa_cpt_registration_columns($columns) {
     return array(
         'cb'      => $columns['cb'],
         'title'   => 'Nazov',
-        'child'   => 'Dieta / Klient',
+        'child'   => 'Dieťa / Klient',
         'program' => 'Program',
-        'parent'  => 'Rodic',
+        'parent'  => 'Rodič',
         'vs'      => 'VS',
         'status'  => 'Status',
-        'date'    => 'Datum'
+        'date'    => 'Dátum'
     );
 }
 
