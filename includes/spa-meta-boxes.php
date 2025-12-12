@@ -66,8 +66,8 @@ function spa_place_meta_box($post) {
             <div class="spa-field">
                 <select name="spa_place_type" id="spa_place_type">
                     <option value="">-- Vyberte typ --</option>
-                    <option value="spa" <?php selected($type, 'spa'); ?>>🏠 Priestory SPA (vlastné)</option>
-                    <option value="external" <?php selected($type, 'external'); ?>>🏫 Externé priestory (prenájom)</option>
+                    <option value="spa" <?php selected($type, 'spa'); ?>>🏠 Priestory SPA</option>
+                    <option value="external" <?php selected($type, 'external'); ?>>🏫 Externé priestory</option>
                 </select>
                 <p class="spa-help">Externé priestory môžu mať príplatok v cene programu</p>
             </div>

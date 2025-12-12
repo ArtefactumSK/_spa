@@ -444,7 +444,7 @@ function spa_place_column_content($column, $post_id) {
         case 'type':
             $type = get_post_meta($post_id, 'spa_place_type', true);
             $types = array(
-                'spa' => '🏠 Priestory SPA',
+                'spa' => get_spa_svg_icon(19).' Priestory SPA',
                 'external' => '🏫 Externé priestory'
             );
             echo isset($types[$type]) ? $types[$type] : '<span style="color:#999;">—</span>';
