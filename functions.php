@@ -295,3 +295,16 @@ add_action('wp_dashboard_setup', function() {
         }
     );
 });
+
+// BLOKOVANIE EMAILOV NA TESTOVACEJ DOMÉNE
+add_filter('pre_wp_mail', 'spa_block_test_emails', 10, 2);
+function spa_block_test_emails($null, $atts) {
+    $current_host = $_SERVER['HTTP_HOST'] ?? '';
+    
+    if (strpos($current_host, 'spa.artepaint.eu') !== false) {
+        error_log('EMAIL BLOCKED on test domain: To=' . ($atts['to'] ?? 'unknown'));
+        return true; // Vráti true = email sa neodošle, ale nespôsobí chybu
+    }
+    
+    return $null; // Normálne pokračovanie
+}
