@@ -27,7 +27,7 @@ function spa_add_all_meta_boxes() {
     add_meta_box('spa_place_schedule', '📅 Rozvrh miesta', 'spa_place_schedule_meta_box', 'spa_place', 'normal', 'default');
     
     // UDALOSTI (spa_event) - NOVÉ
-    add_meta_box('spa_event_details', '📅 Detaily udalosti', 'spa_event_meta_box', 'spa_event', 'normal', 'high');
+    add_meta_box('spa_event_details', '📝 Detaily udalosti', 'spa_event_meta_box', 'spa_event', 'normal', 'high');
     
     // DOCHÁDZKA (spa_attendance) - NOVÉ
     add_meta_box('spa_attendance_details', '✅ Záznam dochádzky', 'spa_attendance_meta_box', 'spa_attendance', 'normal', 'high');
@@ -193,7 +193,7 @@ function spa_event_meta_box($post) {
     <style>
     .spa-meta-row { display: flex; margin-bottom: 15px; align-items: flex-start; }
     .spa-meta-row label { width: 150px; font-weight: 600; padding-top: 8px; }
-    .spa-meta-row .spa-field { flex: 1; }
+    .spa-meta-row .spa-field { flex: 1; }    
     .spa-section { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 20px; }
     </style>
     
@@ -297,7 +297,8 @@ function spa_attendance_meta_box($post) {
     .spa-section h4 { margin: 0 0 15px 0; }
     .spa-stars { font-size: 24px; cursor: pointer; }
     .spa-stars span { color: #ddd; transition: color 0.2s; }
-    .spa-stars span.active { color: #FFD700; }
+    .spa-stars span.active { color:var(--theme-palette-color-3); }
+    .spa-meta-row .spa-field textarea{ width: 100%; }
     </style>
     
     <div class="spa-section">
@@ -324,7 +325,7 @@ function spa_attendance_meta_box($post) {
     </div>
     
     <div class="spa-section">
-        <h4>⭐ Hodnotenie trénera</h4>
+        <h4>★ Hodnotenie trénera</h4>
         
         <div class="spa-meta-row">
             <label>Hviezdičky:</label>
