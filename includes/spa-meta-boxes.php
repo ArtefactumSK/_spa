@@ -79,7 +79,7 @@ function spa_add_all_meta_boxes() {
     // REGISTRACIE
     add_meta_box(
         'spa_registration_details',
-        'Detaily registracie',
+        get_spa_svg_icon(25).'Detaily registrácie',
         'spa_registration_details_callback',
         'spa_registration',
         'normal',
@@ -89,7 +89,7 @@ function spa_add_all_meta_boxes() {
     // SKUPINY TRENINGOV - KOMPLETNY META BOX
     add_meta_box(
         'spa_group_details',
-        'Detaily programu',
+        get_spa_svg_icon(25).'Detaily programu',
         'spa_group_details_callback',
         'spa_group',
         'normal',
