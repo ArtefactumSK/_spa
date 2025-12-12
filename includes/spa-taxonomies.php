@@ -4,6 +4,11 @@
  * 
  * @package Samuel Piasecký ACADEMY
  * @version 1.0.0
+
+ * SPA Taxonomies - DEPRECATED
+ * Taxonómia 'spa_place' je zastaralá - používame teraz CPT 'spa_place'
+ * Ponecháme pre spätnú kompatibilitu so starými programami
+ * NOVÉ MIESTA: Pridávaj cez CPT 'spa_place' (admin → Miesta)
  */
 
 if (!defined('ABSPATH')) {

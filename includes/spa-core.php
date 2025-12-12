@@ -264,7 +264,9 @@ function spa_group_admin_order($query) {
 /**
  * Pridať stĺpec Order v admin liste
  */
+/*
 add_filter('manage_spa_group_posts_columns', 'spa_group_order_column');
+
 function spa_group_order_column($columns) {
     $new = [];
     foreach ($columns as $key => $val) {
@@ -287,10 +289,11 @@ function spa_group_order_column_content($column, $post_id) {
                      style="width:60px;text-align:center;">';
     }
 }
-
+*/
 /**
  * AJAX: Rýchla zmena poradia
  */
+/*
 add_action('wp_ajax_spa_update_order', 'spa_update_order_ajax');
 function spa_update_order_ajax() {
     if (!current_user_can('edit_posts')) {
@@ -310,10 +313,12 @@ function spa_update_order_ajax() {
     
     wp_die();
 }
+*/
 
 /**
  * JavaScript pre quick edit order
  */
+/*
 add_action('admin_footer', 'spa_order_quick_edit_js');
 function spa_order_quick_edit_js() {
     global $typenow;
@@ -341,7 +346,7 @@ function spa_order_quick_edit_js() {
     <?php
 }
 
-
+*/
 
 
 /* ==========================
@@ -395,26 +400,4 @@ function spa_filter_users_for_editor($query) {
     if (current_user_can('editor')) {
         $query->set('role__in', ['spa_parent', 'spa_child', 'spa_client', 'spa_trainer']);
     }
-}
-
-
-
-/* ==========================
-   DEBUG FUNKCIE
-   DEBUG FUNKCIE
-   DEBUG FUNKCIE
-   ========================== */
-
-function spa_log($message, $data = null) {
-    if (!WP_DEBUG) {
-        return;
-    }
-    
-    $log = '[SPA] ' . $message;
-    
-    if ($data !== null) {
-        $log .= ' | Data: ' . print_r($data, true);
-    }
-    
-    error_log($log);
 }
