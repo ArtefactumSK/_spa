@@ -692,10 +692,13 @@ function spa_ajax_load_icon() {
     
     $svg_content = file_get_contents($icon_path);
     if (!$svg_content) {
-        wp_send_json(['success' => false, 'error' => 'Nemôžem načítať súbor']);
+        echo json_encode(['success' => false, 'error' => 'Nemôžem načítať súbor']);
+        wp_die();
     }
-    
-    header('Content-Type: image/svg+xml');
-echo $svg_content;
-wp_die();
+
+    // Odstráň XML deklaráciu ak existuje
+    $svg_content = preg_replace('/<\?xml[^?]*\?>/', '', $svg_content);
+
+    echo json_encode(['success' => true, 'svg' => $svg_content]);
+    wp_die();
 }
