@@ -204,7 +204,7 @@ function spa_event_meta_box($post) {
             <div class="spa-field">
                 <select name="spa_event_type" id="spa_event_type">
                     <option value="">-- Vyberte typ --</option>
-                    <option value="block" <?php selected($type, 'block'); ?>>🚫 Blokovanie (tréningy neprebehajú)</option>
+                    <option value="block" <?php selected($type, 'block'); ?>>🚫 Nedostupné</option>
                     <option value="event" <?php selected($type, 'event'); ?>>🎉 Udalosť (špeciálna akcia)</option>
                     <option value="competition" <?php selected($type, 'competition'); ?>>🏆 Súťaž</option>
                     <option value="holiday" <?php selected($type, 'holiday'); ?>>🎄 Sviatok / Prázdniny</option>
