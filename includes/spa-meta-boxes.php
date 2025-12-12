@@ -114,6 +114,106 @@ function spa_place_meta_box($post) {
 }
 
 /* ============================================================
+   META BOX: REGISTRÁCIA (spa_registration)
+   ============================================================ */
+function spa_registration_meta_box($post) {
+    wp_nonce_field('spa_save_registration', 'spa_registration_nonce');
+    
+    $client_id = get_post_meta($post->ID, 'client_user_id', true);
+    $program_id = get_post_meta($post->ID, 'program_id', true);
+    $parent_id = get_post_meta($post->ID, 'parent_user_id', true);
+    $status = get_post_meta($post->ID, 'status', true);
+    
+    $client = $client_id ? get_userdata($client_id) : null;
+    $program = $program_id ? get_post($program_id) : null;
+    $parent = $parent_id ? get_userdata($parent_id) : null;
+    
+    $vs = $client_id ? get_user_meta($client_id, 'variabilny_symbol', true) : '';
+    $pin = $client_id ? get_user_meta($client_id, 'spa_pin_plain', true) : '';
+    $phone = $parent_id ? get_user_meta($parent_id, 'phone', true) : '';
+    
+    $all_programs = get_posts(array('post_type' => 'spa_group', 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC'));
+    
+    $statuses = array(
+        'pending' => '⏳ Čaká na schválenie',
+        'approved' => '✅ Schválené',
+        'active' => '🟢 Aktívny',
+        'cancelled' => '❌ Zrušené',
+        'completed' => '✔ Zaregistrované'
+    );
+    
+    $client_name = '';
+    if ($client) {
+        $client_name = trim($client->first_name . ' ' . $client->last_name);
+        if (empty($client_name)) $client_name = $client->display_name;
+    }
+    
+    $parent_name = '';
+    if ($parent) {
+        $parent_name = trim($parent->first_name . ' ' . $parent->last_name);
+        if (empty($parent_name)) $parent_name = $parent->display_name;
+    }
+    
+    $place_str = '';
+    if ($program_id) {
+        $places = get_the_terms($program_id, 'spa_place');
+        if ($places && !is_wp_error($places)) {
+            $names = wp_list_pluck($places, 'name');
+            $place_str = implode(', ', $names);
+        }
+    }
+    
+    ?>
+    <style>
+    .spa-reg-table { width: 100%; max-width: 600px; border-collapse: collapse; }
+    .spa-reg-table th { padding: 10px; width: 140px; background: #f9f9f9; border: 1px solid #ddd; font-weight: 600; text-align: right; }
+    .spa-reg-table td { padding: 10px; border: 1px solid #ddd; }
+    .spa-edit-box { margin-top: 20px; padding: 15px; background: #fff8e5; border: 1px solid #f0ad4e; border-radius: 4px; max-width: 550px; }
+    </style>
+    
+    <table class="spa-reg-table">
+        <tr><th>👶 Dieťa / Klient</th><td><strong><?php echo esc_html($client_name ?: '—'); ?></strong></td></tr>
+        <tr><th>🔢 VS</th><td><?php echo esc_html($vs ?: '—'); ?></td></tr>
+        <tr><th>🔑 PIN</th><td><?php echo esc_html($pin ?: '—'); ?></td></tr>
+        <tr><th>📍 Miesto</th><td><?php echo esc_html($place_str ?: '—'); ?></td></tr>
+        <tr><th>👨‍👩‍👧 Rodič</th><td><?php echo esc_html($parent_name ?: '—'); ?></td></tr>
+        <tr><th>📧 E-mail</th><td><?php echo $parent ? esc_html($parent->user_email) : '—'; ?></td></tr>
+        <tr><th>📞 Telefón</th><td><?php echo esc_html($phone ?: '—'); ?></td></tr>
+    </table>
+    
+    <p style="margin-top: 15px;">
+        <?php if ($client_id) : ?>
+            <a href="<?php echo esc_url(get_edit_user_link($client_id)); ?>" class="button" target="_blank">Upraviť profil dieťaťa/klienta</a>
+        <?php endif; ?>
+        <?php if ($parent_id) : ?>
+            <a href="<?php echo esc_url(get_edit_user_link($parent_id)); ?>" class="button" target="_blank">Upraviť profil rodiča</a>
+        <?php endif; ?>
+    </p>
+    
+    <div class="spa-edit-box">
+        <p><strong>📝 Úprava registrácie</strong></p>
+        <p>
+            <label><strong>Program:</strong></label><br>
+            <select name="spa_program_id" style="width: 100%; max-width: 400px;">
+                <option value="">— Vyberte program —</option>
+                <?php foreach ($all_programs as $prog) : ?>
+                    <option value="<?php echo $prog->ID; ?>" <?php selected($program_id, $prog->ID); ?>><?php echo esc_html($prog->post_title); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </p>
+        <p>
+            <label><strong>Status:</strong></label><br>
+            <select name="spa_status" style="width: 200px;">
+                <?php foreach ($statuses as $key => $label) : ?>
+                    <option value="<?php echo $key; ?>" <?php selected($status, $key); ?>><?php echo $label; ?></option>
+                <?php endforeach; ?>
+            </select>
+        </p>
+    </div>
+    <?php
+}
+
+/* ============================================================
    META BOX: ROZVRH MIESTA (spa_place) - NOVÉ
    Týždenný kalendár s časovými slotmi
    ============================================================ */
@@ -589,5 +689,21 @@ function spa_save_group_pricing_meta($post_id, $post) {
     if (isset($_POST['spa_price_1x_weekly'])) {
         $price = floatval(str_replace(',', '.', $_POST['spa_price_1x_weekly']));
         update_post_meta($post_id, 'spa_price', $price);
+    }
+}
+
+// REGISTRÁCIA (spa_registration)
+add_action('save_post_spa_registration', 'spa_save_registration_meta', 10, 2);
+function spa_save_registration_meta($post_id, $post) {
+    if (!isset($_POST['spa_registration_nonce']) || !wp_verify_nonce($_POST['spa_registration_nonce'], 'spa_save_registration')) return;
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
+    
+    if (isset($_POST['spa_program_id'])) {
+        update_post_meta($post_id, 'program_id', intval($_POST['spa_program_id']));
+    }
+    
+    if (isset($_POST['spa_status'])) {
+        update_post_meta($post_id, 'status', sanitize_text_field($_POST['spa_status']));
     }
 }

@@ -175,7 +175,38 @@ function spa_register_cpt_attendance() {
         'show_in_rest'      => false,
     ));
 }
+/* ============================================================
+   CPT: spa_trainer (Tréneri) - NOVÉ!
+   Zoznam trénerov v admin rozhraní
+   ============================================================ */
+add_action('init', 'spa_register_cpt_trainer');
+function spa_register_cpt_trainer() {
+    $labels = array(
+        'name'               => '👟 Tréneri',
+        'singular_name'      => 'Tréner',
+        'menu_name'          => 'SPA Tréneri',
+        'add_new'            => 'Pridať trénera',
+        'add_new_item'       => 'Pridať nového trénera',
+        'edit_item'          => 'Upraviť trénera',
+        'new_item'           => 'Nový tréner',
+        'view_item'          => 'Zobraziť trénera',
+        'search_items'       => 'Hľadať trénerov',
+        'not_found'          => 'Žiadni tréneri nenájdení',
+        'all_items'          => 'Všetci tréneri'
+    );
 
+    register_post_type('spa_trainer', array(
+        'labels'            => $labels,
+        'public'            => false,
+        'show_ui'           => true,
+        'menu_icon'         => 'dashicons-businessman',
+        'menu_position'     => 23,
+        'hierarchical'      => false,
+        'supports'          => array('title', 'thumbnail'),
+        'capability_type'   => 'post',
+        'show_in_rest'      => false,
+    ));
+}
 /* ============================================================
    CPT: spa_payment (Platby)
    EXISTUJÚCI - ponechaný
@@ -600,18 +631,17 @@ function spa_attendance_column_content($column, $post_id) {
             break;
 
 	case 'rating':
-		    $rating = get_post_meta($post_id, 'spa_att_rating', true);
-		    $stars = get_post_meta($post_id, 'spa_att_stars', true);
-		    if ($stars) {
-			$output = '';
-			for ($i = 1; $i <= 5; $i++) {
-			    $output .= ($i <= $stars) ? '⭐' : '☆';
-			}
-			echo $output;
-		    } else {
-			echo '<span style="color:#999;">—</span>';
-		    }
-		    break;
+            $stars = get_post_meta($post_id, 'spa_att_stars', true);
+            if ($stars) {
+                $output = '';
+                for ($i = 1; $i <= 5; $i++) {
+                    $output .= ($i <= $stars) ? '⭐' : '☆';
+                }
+                echo $output;
+            } else {
+                echo '<span style="color:#999;">—</span>';
+            }
+            break;
 	    }
 	}
 
