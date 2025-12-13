@@ -343,59 +343,177 @@ function spa_group_schedule_meta_box($post) {
 function spa_group_pricing_meta_box($post) {
     wp_nonce_field('spa_save_group_pricing', 'spa_group_pricing_nonce');
     
+    // Ceny za týždenne
     $price_1x = get_post_meta($post->ID, 'spa_price_1x_weekly', true);
     $price_2x = get_post_meta($post->ID, 'spa_price_2x_weekly', true);
-    $price_monthly = get_post_meta($post->ID, 'spa_price_monthly', true);
-    $price_semester = get_post_meta($post->ID, 'spa_price_semester', true);
-    $external_surcharge = get_post_meta($post->ID, 'spa_external_surcharge', true);
+    
+    // Externe miesta - príplatok
+    $price_external = get_post_meta($post->ID, 'spa_price_external_addon', true);
+    
+    // NOVÉ: Ceny za obdobia (JSON)
+    $periods_json = get_post_meta($post->ID, 'spa_price_periods', true);
+    $periods = $periods_json ? json_decode($periods_json, true) : [];
     
     ?>
     <style>
-    .spa-pricing-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-    .spa-price-box { background: #fff; border: 2px solid #ddd; padding: 15px; border-radius: 8px; }
-    .spa-price-box h5 { margin: 0 0 10px 0; color: #333; }
-    .spa-price-box input { width: 100px; padding: 8px; font-size: 16px; font-weight: bold; }
-    .spa-price-box .currency { font-size: 16px; margin-left: 5px; }
-    .spa-help { color: #666; font-size: 12px; margin-top: 5px; }
+    .spa-pricing-box { padding: 20px; background: #f9f9f9; border-radius: 4px; margin-bottom: 20px; }
+    .spa-pricing-box h4 { margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .spa-price-row { display: flex; gap: 15px; margin-bottom: 15px; align-items: flex-end; }
+    .spa-price-row label { flex: 1; }
+    .spa-price-row input { width: 100%; padding: 8px; }
+    .spa-period-item { background: #fff; padding: 12px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; display: flex; gap: 10px; align-items: flex-end; }
+    .spa-period-item select, .spa-period-item input { flex: 1; padding: 6px; }
+    .spa-period-item button { padding: 6px 12px; background: #dc3545; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .spa-period-item button:hover { background: #c82333; }
+    .spa-add-period-btn { background: #0066FF; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+    .spa-add-period-btn:hover { background: #0052cc; }
     </style>
     
-    <div class="spa-pricing-grid">
-        <div class="spa-price-box">
-            <h5>💳 Cena za 1x týždenne</h5>
-            <input type="number" name="spa_price_1x_weekly" value="<?php echo esc_attr($price_1x); ?>" step="0.01" min="0">
-            <span class="currency">€</span>
-            <p class="spa-help">Mesačná cena pri jednom tréningu týždenne</p>
+    <!-- TÝŽDENNÉ CENY -->
+    <div class="spa-pricing-box">
+        <h4>📅 Týždenné ceny (T:)</h4>
+        
+        <div class="spa-price-row">
+            <label>
+                T: 1x týždenne
+                <input type="number" name="spa_price_1x_weekly" value="<?php echo esc_attr($price_1x); ?>" step="0.01" min="0">
+            </label>
+            <span>€</span>
         </div>
         
-        <div class="spa-price-box">
-            <h5>💳 Cena za 2x týždenne</h5>
-            <input type="number" name="spa_price_2x_weekly" value="<?php echo esc_attr($price_2x); ?>" step="0.01" min="0">
-            <span class="currency">€</span>
-            <p class="spa-help">Mesačná cena pri dvoch tréningoch týždenne (zvýhodnená)</p>
+        <div class="spa-price-row">
+            <label>
+                T: 2x týždenne
+                <input type="number" name="spa_price_2x_weekly" value="<?php echo esc_attr($price_2x); ?>" step="0.01" min="0">
+            </label>
+            <span>€</span>
         </div>
         
-        <div class="spa-price-box">
-            <h5>📅 Cena mesačne (paušál)</h5>
-            <input type="number" name="spa_price_monthly" value="<?php echo esc_attr($price_monthly); ?>" step="0.01" min="0">
-            <span class="currency">€</span>
-            <p class="spa-help">Voliteľné - fixná mesačná cena</p>
-        </div>
-        
-        <div class="spa-price-box">
-            <h5>🎓 Cena za semester</h5>
-            <input type="number" name="spa_price_semester" value="<?php echo esc_attr($price_semester); ?>" step="0.01" min="0">
-            <span class="currency">€</span>
-            <p class="spa-help">Voliteľné - cena za celý školský polrok</p>
-        </div>
+        <p class="spa-help" style="color: #666; font-size: 12px; margin: 10px 0 0 0;">
+            Mesačná cena pri jednom/dvoch tréningoch za týždeň
+        </p>
     </div>
     
-    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
-        <h5 style="margin: 0 0 10px 0;">🏫 Príplatok za externé priestory</h5>
-        <input type="number" name="spa_external_surcharge" value="<?php echo esc_attr($external_surcharge); ?>" step="0.01" min="0" style="width: 80px;">
-        <span class="currency">€</span>
-        <p class="spa-help" style="margin-top: 5px;">Príplatok k cene ak sa tréning koná v externých priestoroch (prenájom)</p>
+    <!-- CENY ZA OBDOBIA -->
+    <div class="spa-pricing-box">
+        <h4>📆 Ceny za obdobia (O:)</h4>
+        <p style="color: #666; font-size: 12px; margin: 0 0 15px 0;">
+            Pridaj ceny za konkrétne obdobia (október-december, január-marec, atď.)
+        </p>
+        
+        <div id="spa-periods-container">
+            <?php
+            if (!empty($periods)) {
+                foreach ($periods as $idx => $period) {
+                    spa_render_period_row($idx, $period);
+                }
+            }
+            ?>
+        </div>
+        
+        <button type="button" class="spa-add-period-btn" onclick="spa_add_period_row()">
+            + Pridať ďalšie obdobie
+        </button>
+    </div>
+    
+    <!-- EXTERNE MIESTA -->
+    <div class="spa-pricing-box" style="background: #fffacd;">
+        <h4>🏫 Príplatok pre eksterne priestory</h4>
+        
+        <div class="spa-price-row">
+            <label>
+                Príplatok k cene (€)
+                <input type="number" name="spa_price_external_addon" value="<?php echo esc_attr($price_external); ?>" step="0.01" min="0">
+            </label>
+        </div>
+        
+        <p class="spa-help" style="color: #666; font-size: 12px; margin: 10px 0 0 0;">
+            Príplatok k cene za tréning ak je v externých priestoroch
+        </p>
+    </div>
+    
+    <script>
+    var spa_period_counter = <?php echo !empty($periods) ? max(array_keys($periods)) + 1 : 0; ?>;
+    
+    function spa_add_period_row() {
+        var container = document.getElementById('spa-periods-container');
+        var newRow = document.createElement('div');
+        newRow.className = 'spa-period-item';
+        newRow.innerHTML = `
+            <input type="text" name="spa_price_periods[${spa_period_counter}][name]" placeholder="napr. október-december" style="flex: 1.5;">
+            <input type="number" name="spa_price_periods[${spa_period_counter}][price]" placeholder="cena" step="0.01" min="0" style="flex: 1;">
+            <span>€</span>
+            <button type="button" onclick="this.parentElement.remove()">Odstrániť</button>
+        `;
+        container.appendChild(newRow);
+        spa_period_counter++;
+    }
+    </script>
+    
+    <?php
+}
+
+/**
+ * HELPER: Render jedného riadku obdobia
+ */
+function spa_render_period_row($idx, $period) {
+    $name = isset($period['name']) ? $period['name'] : '';
+    $price = isset($period['price']) ? $period['price'] : '';
+    
+    ?>
+    <div class="spa-period-item">
+        <input type="text" name="spa_price_periods[<?php echo $idx; ?>][name]" 
+               value="<?php echo esc_attr($name); ?>" 
+               placeholder="napr. október-december" style="flex: 1.5;">
+        <input type="number" name="spa_price_periods[<?php echo $idx; ?>][price]" 
+               value="<?php echo esc_attr($price); ?>" 
+               placeholder="cena" step="0.01" min="0" style="flex: 1;">
+        <span>€</span>
+        <button type="button" onclick="this.parentElement.remove()">Odstrániť</button>
     </div>
     <?php
+}
+
+/**
+ * SAVE: Ulož ceny (pridaj do save hooku)
+ */
+
+add_action('save_post_spa_group', 'spa_save_group_pricing_v2', 20);
+
+function spa_save_group_pricing_v2($post_id) {
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
+    if (!isset($_POST['spa_group_pricing_nonce'])) return;
+    if (!wp_verify_nonce($_POST['spa_group_pricing_nonce'], 'spa_save_group_pricing')) return;
+    
+    // TÝŽDENNÉ CENY
+    if (isset($_POST['spa_price_1x_weekly'])) {
+        update_post_meta($post_id, 'spa_price_1x_weekly', floatval($_POST['spa_price_1x_weekly']));
+    }
+    
+    if (isset($_POST['spa_price_2x_weekly'])) {
+        update_post_meta($post_id, 'spa_price_2x_weekly', floatval($_POST['spa_price_2x_weekly']));
+    }
+    
+    // EXTERNE CENY
+    if (isset($_POST['spa_price_external_addon'])) {
+        update_post_meta($post_id, 'spa_price_external_addon', floatval($_POST['spa_price_external_addon']));
+    }
+    
+    // CENY ZA OBDOBIA
+    $periods = [];
+    if (isset($_POST['spa_price_periods']) && is_array($_POST['spa_price_periods'])) {
+        foreach ($_POST['spa_price_periods'] as $idx => $period) {
+            if (!empty($period['name']) && !empty($period['price'])) {
+                $periods[$idx] = [
+                    'name' => sanitize_text_field($period['name']),
+                    'price' => floatval($period['price'])
+                ];
+            }
+        }
+    }
+    
+    update_post_meta($post_id, 'spa_price_periods', json_encode($periods));
 }
 
 /* ============================================================
