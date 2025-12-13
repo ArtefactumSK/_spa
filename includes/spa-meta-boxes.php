@@ -16,10 +16,12 @@ add_action('add_meta_boxes', 'spa_add_all_meta_boxes');
 function spa_add_all_meta_boxes() {
     
     // PROGRAMY (spa_group)
-    add_meta_box('spa_group_details', '🤸 Detaily programu', 'spa_group_meta_box', 'spa_group', 'normal', 'high');
-    add_meta_box('spa_group_schedule', '📅 Rozvrh programu', 'spa_group_schedule_meta_box', 'spa_group', 'normal', 'high');
-    // PRICING META BOX BOL ODSTRÁNENÝ - BUDE OPRAVENÝ NESKÔR
+    //add_meta_box('spa_group_details', '🤸 Detaily programu', 'spa_group_meta_box', 'spa_group', 'normal', 'high');
+    //add_meta_box('spa_group_schedule', '📅 Rozvrh programu', 'spa_group_schedule_meta_box', 'spa_group', 'normal', 'high');
     
+    // PRICING META BOX BOL ODSTRÁNENÝ - BUDE OPRAVENÝ NESKÔR
+    add_meta_box('spa_group_pricing', '💳 Cenník programu', 'spa_group_pricing_meta_box', 'spa_group', 'normal', 'high');
+
     // REGISTRÁCIE
     add_meta_box('spa_registration_details', '📋 Detaily registrácie', 'spa_registration_meta_box', 'spa_registration', 'normal', 'high');
     
