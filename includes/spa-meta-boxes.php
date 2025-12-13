@@ -16,8 +16,8 @@ add_action('add_meta_boxes', 'spa_add_all_meta_boxes');
 function spa_add_all_meta_boxes() {
     
     // PROGRAMY (spa_group)
-    //add_meta_box('spa_group_details', '🤸 Detaily programu', 'spa_group_meta_box', 'spa_group', 'normal', 'high');
-    //add_meta_box('spa_group_schedule', '📅 Rozvrh programu', 'spa_group_schedule_meta_box', 'spa_group', 'normal', 'high');
+    add_meta_box('spa_group_details', '🤸 Detaily programu', 'spa_group_meta_box', 'spa_group', 'normal', 'high');
+    add_meta_box('spa_group_schedule', '📅 Rozvrh programu', 'spa_group_schedule_meta_box', 'spa_group', 'normal', 'high');
     
     // PRICING META BOX BOL ODSTRÁNENÝ - BUDE OPRAVENÝ NESKÔR
     add_meta_box('spa_group_pricing', '💳 Cenník programu', 'spa_group_pricing_meta_box', 'spa_group', 'normal', 'high');
@@ -436,5 +436,91 @@ function spa_group_schedule_save($post_id, $post) {
         }
         
         update_post_meta($post_id, 'spa_schedule', json_encode($schedule));
+    }
+}
+/* ============================================================
+   META BOX: CENNÍK PROGRAMU (JEDNODUCHÝ FORMÁT)
+   ============================================================ */
+
+function spa_group_pricing_meta_box($post) {
+    wp_nonce_field('spa_save_group_pricing', 'spa_group_pricing_nonce');
+    
+    $pricing_seasons = get_post_meta($post->ID, 'spa_pricing_seasons', true);
+    if (!is_array($pricing_seasons)) {
+        $pricing_seasons = array(
+            'sep_dec' => array('1x' => 0, '2x' => 0, '3x' => 0),
+            'jan_mar' => array('1x' => 0, '2x' => 0, '3x' => 0),
+            'apr_jun' => array('1x' => 0, '2x' => 0, '3x' => 0),
+            'jul_aug' => array('1x' => 0, '2x' => 0, '3x' => 0)
+        );
+    }
+    
+    echo '<table style="width:100%; border-collapse:collapse; margin-bottom:20px;">';
+    echo '<tr style="background:#f0f0f0;">';
+    echo '<th style="padding:12px; border:1px solid #ddd; text-align:left; font-weight:600;">Sezóna</th>';
+    echo '<th style="padding:12px; border:1px solid #ddd; text-align:center; font-weight:600;">1x týždenne (€)</th>';
+    echo '<th style="padding:12px; border:1px solid #ddd; text-align:center; font-weight:600;">2x týždenne (€)</th>';
+    echo '<th style="padding:12px; border:1px solid #ddd; text-align:center; font-weight:600;">3x týždenne (€)</th>';
+    echo '</tr>';
+    
+    $seasons = array(
+        'sep_dec' => '🍂 September - December (09-12)',
+        'jan_mar' => '❄️ Január - Marec (01-03)',
+        'apr_jun' => '🌱 Apríl - Jún (04-06)',
+        'jul_aug' => '☀️ Júl - August (07-08)'
+    );
+    
+    foreach ($seasons as $key => $label) {
+        $data = isset($pricing_seasons[$key]) ? $pricing_seasons[$key] : array();
+        echo '<tr>';
+        echo '<td style="padding:12px; border:1px solid #ddd;"><strong>' . esc_html($label) . '</strong></td>';
+        echo '<td style="padding:12px; border:1px solid #ddd; text-align:center;"><input type="number" name="spa_pricing_seasons[' . esc_attr($key) . '][1x]" value="' . esc_attr(isset($data['1x']) ? $data['1x'] : 0) . '" step="0.01" min="0" style="width:120px; padding:8px; border:1px solid #ddd; border-radius:4px;"></td>';
+        echo '<td style="padding:12px; border:1px solid #ddd; text-align:center;"><input type="number" name="spa_pricing_seasons[' . esc_attr($key) . '][2x]" value="' . esc_attr(isset($data['2x']) ? $data['2x'] : 0) . '" step="0.01" min="0" style="width:120px; padding:8px; border:1px solid #ddd; border-radius:4px;"></td>';
+        echo '<td style="padding:12px; border:1px solid #ddd; text-align:center;"><input type="number" name="spa_pricing_seasons[' . esc_attr($key) . '][3x]" value="' . esc_attr(isset($data['3x']) ? $data['3x'] : 0) . '" step="0.01" min="0" style="width:120px; padding:8px; border:1px solid #ddd; border-radius:4px;"></td>';
+        echo '</tr>';
+    }
+    
+    echo '</table>';
+    echo '<p style="color:#666; font-size:12px;">💡 Nastav ceny (€/týždeň) pre každú sezónu a frekvenciu. Príklad: September-December, 1x = 60€; Január-Marec, 1x = 66€</p>';
+}
+
+
+/*SAVE HANDLER*/
+
+add_action('save_post_spa_group', 'spa_group_pricing_save', 10, 2);
+
+function spa_group_pricing_save($post_id, $post) {
+    if ($post->post_type !== 'spa_group') {
+        return;
+    }
+    
+    if (!isset($_POST['spa_group_pricing_nonce']) || !wp_verify_nonce($_POST['spa_group_pricing_nonce'], 'spa_save_group_pricing')) {
+        return;
+    }
+    
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+    
+    if (isset($_POST['spa_pricing_seasons']) && is_array($_POST['spa_pricing_seasons'])) {
+        $pricing_seasons = array();
+        
+        foreach ($_POST['spa_pricing_seasons'] as $season => $frequencies) {
+            $season = sanitize_key($season);
+            $pricing_seasons[$season] = array();
+            
+            if (is_array($frequencies)) {
+                foreach ($frequencies as $freq => $price) {
+                    $freq = sanitize_key($freq);
+                    $pricing_seasons[$season][$freq] = floatval($price);
+                }
+            }
+        }
+        
+        update_post_meta($post_id, 'spa_pricing_seasons', $pricing_seasons);
     }
 }
