@@ -1,5 +1,6 @@
+<?php
 /**
- * SÚBOR 2: includes/user/spa-user-parents.php
+ * SÚBOR: includes/user/spa-user-clients.php
  * Akcia: Vytvor NOVÝ súbor s týmto obsahom
  */
 
@@ -8,7 +9,7 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * SPA User Parents - Funkcie pre rodiča
+ * SPA User Clients - Funkcie pre dospelých klientov
  * 
  * @package Samuel Piasecký ACADEMY
  * @subpackage User
@@ -19,6 +20,6 @@ if (!defined('ABSPATH')) {
  */
 
 // TODO: Presunúť funkcie z spa-registration-helpers.php:
-// - spa_get_or_create_parent()
-// - spa_parent_dashboard()
+// - spa_get_or_create_client()
+// - spa_client_dashboard()
 // - atď.
