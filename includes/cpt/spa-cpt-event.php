@@ -6,19 +6,21 @@
  * @subpackage CPT
  * @version 1.0.0
  * 
- * PARENT MODULES:
- * - spa-core/spa-constants.php
- * 
- * CHILD MODULES: všetky
+ * PARENT MODULES: spa-core/spa-constants.php
+ * CHILD MODULES: frontend
  * 
  * CPT REGISTERED:
- * - spa_event (Udalosti)
+ * - spa_event (Udalosti/Blokovanie)
  * 
  * FUNCTIONS DEFINED:
  * - spa_register_cpt_event()
  * 
+ * DATABASE TABLES:
+ * - wp_posts (post_type = spa_event)
+ * - wp_postmeta (meta pre udalosti)
+ * 
  * HOOKS USED:
- * - init (registration)
+ * - init (CPT registration)
  * 
  * NOTES:
  * Slúži na blokovanie priestoru jednorazovo alebo opakovane

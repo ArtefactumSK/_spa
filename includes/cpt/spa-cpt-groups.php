@@ -1,25 +1,26 @@
 <?php
 /**
- * SPA CPT: Groups/Programs - Programy a skupiny tréningov
+ * SPA CPT: Groups - Programy a skupiny tréningov
  * 
  * @package Samuel Piasecký ACADEMY
  * @subpackage CPT
  * @version 1.0.0
  * 
- * PARENT MODULES:
- * - spa-core/spa-constants.php
- * - spa-core/spa-roles.php
- * 
- * CHILD MODULES: všetky moduly
+ * PARENT MODULES: spa-core/spa-constants.php
+ * CHILD MODULES: registration, import, frontend
  * 
  * CPT REGISTERED:
- * - spa_group (Programy/Skupiny)
+ * - spa_group (Programy/Skupiny tréningov)
  * 
  * FUNCTIONS DEFINED:
  * - spa_register_cpt_groups()
  * 
+ * DATABASE TABLES:
+ * - wp_posts (post_type = spa_group)
+ * - wp_postmeta (meta pre programy)
+ * 
  * HOOKS USED:
- * - init (registration)
+ * - init (CPT registration)
  */
 
 if (!defined('ABSPATH')) {
@@ -38,24 +39,23 @@ function spa_register_cpt_groups() {
         'singular_name'      => 'Program',
         'menu_name'          => 'SPA Programy',
         'add_new'            => 'Pridať program',
-        'add_new_item' => 'Pridať nové miesto',
-        'edit_item'          => 'Upraviť miesto',
-        'new_item'           => 'Nové miesto',
-        'view_item'          => 'Zobraziť miesto',
-        'search_items'       => 'Hľadať miesta',
-        'not_found'          => 'Žiadne miesta nenájdené',
-        'not_found_in_trash' => 'Žiadne miesta v koši',
-        'all_items'          => 'Všetky miesta'
+        'add_new_item'       => 'Pridať nový program',
+        'edit_item'          => 'Upraviť program',
+        'new_item'           => 'Nový program',
+        'view_item'          => 'Zobraziť program',
+        'search_items'       => 'Hľadať programy',
+        'not_found'          => 'Žiadne programy nenájdené',
+        'not_found_in_trash' => 'Žiadne programy v koši'
     );
 
-    register_post_type('spa_place', array(
+    register_post_type('spa_group', array(
         'labels'            => $labels,
         'public'            => false,
         'show_ui'           => true,
-        'menu_icon'         => 'dashicons-location',
-        'menu_position'     => 24,
+        'menu_icon'         => 'dashicons-universal-access-alt',
+        'menu_position'     => 20,
         'hierarchical'      => false,
-        'supports'          => array('title'),
+        'supports'          => array('title', 'editor'),
         'capability_type'   => 'post',
         'show_in_rest'      => false,
     ));
