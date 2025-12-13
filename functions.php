@@ -25,7 +25,7 @@ add_action( 'admin_init', 'remove_gravity_forms_nag' );
 /* ==========================
    NAČÍTANIE ŠTÝLOV A CSS
    ========================== */
-
+/*
 add_action('wp_enqueue_scripts', 'spa_enqueue_styles', 5);
 add_action('admin_enqueue_scripts', 'spa_enqueue_admin_styles', 5);
 
@@ -55,6 +55,7 @@ function spa_enqueue_admin_styles() {
     wp_enqueue_style('spa-admin-core', $spa_url . '/assets/css/admin/admin-core.css', ['spa-variables'], '26.1.0');
     wp_enqueue_style('spa-admin-notices', $spa_url . '/assets/css/admin/admin-notices.css', ['spa-variables'], '26.1.0');
 }
+*/
 
 /* ==========================
    ARTEFACTUM SUPPORT
@@ -127,9 +128,9 @@ if (!defined('SPA_INCLUDES')) {
 
 // FÁZA 1: CORE - Povinné pri štarte
 $spa_core_modules = [
-    // 'core/spa-constants.php',      // Konštanty (override)
-    // 'core/spa-roles.php',          // Role a capabilities
-    // 'core/spa-filters-hooks.php',  // Globálne filtre a bezpečnosť
+     'core/spa-constants.php',      // Konštanty (override)
+     'core/spa-roles.php',          // Role a capabilities
+     'core/spa-filters-hooks.php',  // Globálne filtre a bezpečnosť
 ];
 
 foreach ($spa_core_modules as $module) {
