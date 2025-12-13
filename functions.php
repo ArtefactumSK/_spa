@@ -3,7 +3,10 @@
  * Theme Name: Blocksy Child - Samuel Piasecký ACADEMY
  * Description: Child theme pre Samuel Piasecký ACADEMY
  * Author: Artefactum
- * Version: 26.1.3-STABLE
+ * Version: 26.1.5-STABLE
+ * 
+ * POZNÁMKA: Toto je MINIMÁLNA STABILNÁ konfigurácia
+ * Zakomentované moduly budú pridané v nasledujúcich iteráciách
  */
 
 if (!defined('ABSPATH')) {
@@ -28,7 +31,7 @@ add_action('admin_init', function() {
 /* ==========================
    KONŠTANTY
    ========================== */
-define('SPA_VERSION', '26.1.3');
+define('SPA_VERSION', '26.1.5');
 define('SPA_PATH', get_stylesheet_directory());
 define('SPA_URL', get_stylesheet_directory_uri());
 define('SPA_INCLUDES', SPA_PATH . '/includes/');
@@ -96,15 +99,25 @@ function spa_load_module($file) {
 }
 
 /* ==========================
-   NAČÍTANIE MODULOV - CORE (POVINNÉ)
+   PORADIE NAČÍTANIA - MINIMÁLNA STABILNÁ KONFIGURÁCIA
+   
+   ✅ HOTOVÉ A AKTÍVNE:
+   - FÁZA 0: Core (constants, roles, filters)
+   - FÁZA 1-2: CPT + Taxonomies
+   - FÁZA 3: User fields + helpers
+   - FÁZA 4: Import CSV v2
+   
+   ❌ ZAKOMENTOVANÉ (Problematické/budúcnosť):
+   - Staré admin moduly (duplicity, závislosti)
+   - Registračné notifikácie (duplicity)
    ========================== */
+
+// FÁZA 0: CORE (Povinné)
 spa_load_module('core/spa-constants.php');
 spa_load_module('core/spa-roles.php');
 spa_load_module('core/spa-filters-hooks.php');
 
-/* ==========================
-   NAČÍTANIE MODULOV - CPT (POVINNÉ)
-   ========================== */
+// FÁZA 1-2: CPT + TAXONOMIES (Povinné)
 spa_load_module('cpt/spa-cpt-groups.php');
 spa_load_module('cpt/spa-cpt-registration.php');
 spa_load_module('cpt/spa-cpt-place.php');
@@ -112,46 +125,45 @@ spa_load_module('cpt/spa-cpt-event.php');
 spa_load_module('cpt/spa-cpt-attendance.php');
 spa_load_module('helpers/spa-taxonomies.php');
 
-/* ==========================
-   NAČÍTANIE MODULOV - FÁZA 3: USER
-   ========================== */
+// FÁZA 3: USER FIELDS + HELPERS
 spa_load_module('user/spa-user-fields.php');
 spa_load_module('user/spa-user-parents.php');
 spa_load_module('user/spa-user-children.php');
 spa_load_module('user/spa-user-clients.php');
 
-/* ==========================
-   ADMIN MODULES
-   ========================== */
-spa_load_module('spa-admin-columns.php');
-spa_load_module('spa-meta-boxes.php');
-spa_load_module('spa-shortcodes.php');
-spa_load_module('spa-widgets.php');
-spa_load_module('spa-calendar.php');
-spa_load_module('spa-trainer.php');
-spa_load_module('spa-login.php');
-spa_load_module('spa-login-popup.php');
-
-/* ==========================
-   IMPORT - Nová verzia v2
-   ========================== */
-// Vymaž starý import.php - načítavaj len nový
-spa_load_module('import/spa-import-csv-v2.php');
-
-// FALLBACK: Ak starý import ainda existuje (kompatibilita)
-// spa_load_module('spa-import.php'); // ← ZAKOMENTOVANÉ
-
-/* ==========================
-   REGISTRÁCIA - Nové fragmentované súbory
-   ALE: Bez FÁZY 3 (user/) pretože ešte neexistujú
-   ========================== */
-spa_load_module('registration/spa-registration-helpers.php');
-spa_load_module('registration/spa-registration-notifications.php');
+// FÁZA 3+: REGISTRÁCIA (Fragmentované)
+// Poznámka: Helpers a notifications sú zakomentované (duplicity s user modulmi)
+// spa_load_module('registration/spa-registration-helpers.php');
+// spa_load_module('registration/spa-registration-notifications.php');
 spa_load_module('registration/spa-registration-form.php');
 
+// FÁZA 4: IMPORT CSV V2
+spa_load_module('import/spa-import-csv-v2.php');
+
 /* ==========================
-   FALLBACK: Ak registrácia nie je fragmentovaná
-   Poznámka: spa-registration.php.bak sa nenačítava (je .bak)
+   KRITICKÉ ADMIN MODULY (Musí byť aktívne!)
+   ========================== */
+spa_load_module('spa-meta-boxes.php');     // ← KRITICKÉ! (Program meta fieldy)
+spa_load_module('spa-admin-columns.php');   // ← KRITICKÉ! (Admin columns)
+
+/* ==========================
+   ZAKOMENTOVANÉ MODULY (Budúce alebo problematické)
+   
+   Staré admin moduly majú závislosti a duplicity.
+   Budú zrefaktorované v nasledujúcich iteráciách.
+   ========================== */
+
+// spa_load_module('spa-admin-columns.php');
+// spa_load_module('spa-meta-boxes.php');
+// spa_load_module('spa-shortcodes.php');
+// spa_load_module('spa-widgets.php');
+// spa_load_module('spa-calendar.php');
+// spa_load_module('spa-trainer.php');
+// spa_load_module('spa-login.php');
+// spa_load_module('spa-login-popup.php');
+
+/* ==========================
+   FALLBACK: Staré registrácia (AK fragmentovaná neexistuje)
    ========================== */
 if (!file_exists(SPA_INCLUDES . 'registration/spa-registration-form.php')) {
     spa_load_module('spa-registration.php');
