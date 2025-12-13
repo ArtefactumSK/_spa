@@ -154,16 +154,6 @@ if (is_admin()) {
     add_action('plugins_loaded', 'custom_aios_compatibility', 1);
 }
 
-
-/* ==========================
-   ZÁKLADNÉ KONŠTANTY
-   ========================== */
-
-define('SPA_VERSION', '26.1.0');
-define('SPA_PATH', get_stylesheet_directory());
-define('SPA_URL', get_stylesheet_directory_uri());
-define('SPA_INCLUDES', SPA_PATH . '/includes/');
-
 /* ==========================
    NAČÍTANIE ŠTÝLOV
    ========================== */
@@ -226,33 +216,63 @@ add_action('admin_init', function() {
    ========================== */
 
 $spa_modules = [
-    'spa-core.php',           // Základné funkcie, role, capabilities
-    'spa-helpers.php',        // Pomocné funkcie
-    'spa-cpt.php',           // Custom Post Types
-    'spa-admin-columns.php',  // Admin columns
-    'spa-taxonomies.php',    // Taxonómie    
-    'spa-shortcodes.php',    // Frontend shortcodes
-    'spa-widgets.php',       // Widgety, bannery
-    'spa-calendar.php',      // Kalendár, Obsadenosť hál
-    'spa-user-fields.php',   // ✅ Rozšírené polia (rodné číslo, VS, adresa)
-    'spa-login.php',         // ✅ Custom login systém (email+heslo / meno+priezvisko+PIN)
-    'spa-login-popup.php',   // ✅ login popup
-    'spa-registration.php',  // Registračný systém (FÁZA 2)
-    'spa-meta-boxes.php',    // Admin meta boxy
-    'spa-import.php',        // ✅ NOVÉ: Import nástroj
-    'spa-trainer.php',       // ✅ NOVÉ: Správa trénerov
-    // 'spa-dashboard.php',     // Dashboardy (FÁZA 2)
-    // 'spa-payments.php',      // Platby (FÁZA 2)
-    // 'spa-attendance.php',    // Dochádzka (FÁZA 3)
-    // 'spa-gamification.php',  // Gamifikácia (FÁZA 3)
-    // 'spa-messaging.php',     // Správy (FÁZA 3)
-    // 'spa-notifications.php', // Notifikácie (FÁZA 3)
+    // === CORE - ZÁKLADNÉ FUNKCIE ===
+    'core/spa-constants.php',         // Konštanty
+    'core/spa-roles.php',             // Role a capabilities
+    'core/spa-filters-hooks.php',     // Globálne filtre, bezpečnosť, hooks
+    
+    // === CPT - CUSTOM POST TYPES ===
+    'cpt/spa-cpt-groups.php',         // Programy
+    'cpt/spa-cpt-registration.php',   // Registrácie
+    'cpt/spa-cpt-place.php',          // Miesta
+    'cpt/spa-cpt-event.php',          // Udalosti
+    'cpt/spa-cpt-attendance.php',     // Dochádzka
+    
+    // === TAXONOMIES ===
+    'helpers/spa-taxonomies.php',     // Taxonómie
+    
+    // === USER MANAGEMENT ===
+    'user/spa-user-fields.php',       // User meta polia
+    'user/spa-user-parents.php',      // Funkcie pre rodičov
+    'user/spa-user-children.php',     // Funkcie pre deti
+    'user/spa-user-clients.php',      // Funkcie pre klientov
+    
+    // === REGISTRATION ===
+    'registration/spa-registration-helpers.php',      // Helper funkcie
+    'registration/spa-registration-notifications.php', // Notifikácie
+    'registration/spa-registration-form.php',         // GF hooky
+    
+    // === IMPORT ===
+    'import/spa-import-helpers.php',     // Helper funkcie
+    'import/spa-import-children.php',    // Import detí
+    'import/spa-import-adults.php',      // Import dospelých
+    'import/spa-import-processor.php',   // Spracovanie
+    'import/spa-import-ui.php',          // Admin UI
+    
+    // === LOGIN ===
+    'login/spa-login.php',           // Email+heslo login
+    'login/spa-login-popup.php',     // Login popup
+    
+    // === ADMIN ===
+    'admin/spa-admin-columns.php',   // Admin columns
+    'admin/spa-meta-boxes.php',      // Meta boxy
+    
+    // === FRONTEND ===
+    'frontend/spa-shortcodes.php',   // Shortcodes
+    'frontend/spa-widgets.php',      // Widgety
+    'frontend/spa-calendar.php',     // Kalendár
+    'frontend/spa-trainer.php',      // Tréner
 ];
 
 foreach ($spa_modules as $module) {
     $file = SPA_INCLUDES . $module;
     if (file_exists($file)) {
         require_once $file;
+    } else {
+        // Debug: v budúcnosti skontroluj chýbajúce súbory
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[SPA] Missing module: ' . $file);
+        }
     }
 }
 
