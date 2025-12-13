@@ -32,9 +32,18 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+
 /* ==================================================
-   HELPER: Get status label (SK)
+   HELPER: Logging - Zaznamenanie chýb a udalostí
    ================================================== */
+
+function spa_log($message, $data = null) {
+    $log_msg = '[SPA] ' . date('Y-m-d H:i:s') . ' - ' . $message;
+    if (!empty($data)) {
+        $log_msg .= ' | Data: ' . print_r($data, true);
+    }
+    error_log($log_msg);
+}
 
 function spa_get_status_label($status) {
     $labels = [
