@@ -125,7 +125,7 @@ if (!defined('SPA_INCLUDES')) {
 /* ==========================
    NAČÍTANIE MODULOV - POSTUPNE
    ========================== */
-
+/*
 // FÁZA 1: CORE - Povinné pri štarte
 $spa_core_modules = [
      'core/spa-constants.php',      // Konštanty (override)
@@ -144,14 +144,14 @@ foreach ($spa_core_modules as $module) {
     }
 }
 
-// FÁZA 2: CPT a TAXONOMIES - Po CORE
+// FÁZA 2: CPT a TAXONOMIES - Po CORE (AK EXISTUJÚ)
 $spa_cpt_modules = [
-    'cpt/spa-cpt-groups.php',
-    'cpt/spa-cpt-registration.php',
-    'cpt/spa-cpt-place.php',
-    'cpt/spa-cpt-event.php',
-    'cpt/spa-cpt-attendance.php',
-    'helpers/spa-taxonomies.php',
+    // 'cpt/spa-cpt-groups.php',
+    // 'cpt/spa-cpt-registration.php',
+    // 'cpt/spa-cpt-place.php',
+    // 'cpt/spa-cpt-event.php',
+    // 'cpt/spa-cpt-attendance.php',
+    // 'helpers/spa-taxonomies.php',
 ];
 
 foreach ($spa_cpt_modules as $module) {
@@ -246,7 +246,7 @@ foreach ($spa_frontend_modules as $module) {
         require_once $file;
     }
 }
-
+*/
 /* ==========================
    DEBUG MODE (vývojové)
    ========================== */
