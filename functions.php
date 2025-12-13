@@ -33,12 +33,12 @@ function spa_enqueue_styles() {
     // Parent theme
     wp_enqueue_style('parent-style', get_template_directory_uri() . '/style.css');
     
-    // Child theme
-    wp_enqueue_style('child-style', get_stylesheet_directory_uri() . '/style.css', ['parent-style'], SPA_VERSION);
+    // Child theme - OPRAVA: Použiť presný version
+    wp_enqueue_style('child-style', get_stylesheet_directory_uri() . '/style.css', ['parent-style'], '26.1.0');
     
-    // SPA CSS - Shared
-    wp_enqueue_style('spa-variables', SPA_URL . '/assets/css/variables.css', [], SPA_VERSION);
-    wp_enqueue_style('spa-notices', SPA_URL . '/assets/css/admin/admin-notices.css', ['spa-variables'], SPA_VERSION);
+    // SPA CSS - Shared - OPRAVA: Bez SPA_VERSION!
+    wp_enqueue_style('spa-variables', get_stylesheet_directory_uri() . '/assets/css/variables.css', [], '26.1.0');
+    wp_enqueue_style('spa-notices', get_stylesheet_directory_uri() . '/assets/css/admin/admin-notices.css', ['spa-variables'], '26.1.0');
     
     // jQuery (potrebné pre AJAX)
     wp_enqueue_script('jquery');
@@ -46,11 +46,11 @@ function spa_enqueue_styles() {
 
 function spa_enqueue_admin_styles() {
     // Admin CSS - Shared
-    wp_enqueue_style('spa-variables', SPA_URL . '/assets/css/variables.css', [], SPA_VERSION);
+    wp_enqueue_style('spa-variables', get_stylesheet_directory_uri() . '/assets/css/variables.css', [], '26.1.0');
     
     // Admin CSS - Core
-    wp_enqueue_style('spa-admin-core', SPA_URL . '/assets/css/admin/admin-core.css', ['spa-variables'], SPA_VERSION);
-    wp_enqueue_style('spa-admin-notices', SPA_URL . '/assets/css/admin/admin-notices.css', ['spa-variables'], SPA_VERSION);
+    wp_enqueue_style('spa-admin-core', get_stylesheet_directory_uri() . '/assets/css/admin/admin-core.css', ['spa-variables'], '26.1.0');
+    wp_enqueue_style('spa-admin-notices', get_stylesheet_directory_uri() . '/assets/css/admin/admin-notices.css', ['spa-variables'], '26.1.0');
 }
 
 /* ==========================
