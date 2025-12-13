@@ -179,12 +179,26 @@ foreach ($spa_user_modules as $module) {
         require_once $file;
     }
 }
+
+// FÁZA 4: REGISTRATION
+$spa_registration_modules = [
+    'registration/spa-registration-helpers.php',
+    'registration/spa-registration-notifications.php',
+    'registration/spa-registration-form.php',
+];
+
+foreach ($spa_registration_modules as $module) {
+    $file = SPA_INCLUDES . $module;
+    if (file_exists($file)) {
+        require_once $file;
+    }
+}
 // FÁZA 4: REGISTRATION - FALLBACK NA STARÉ RIEŠENIE
-$old_registration = SPA_INCLUDES . 'spa-registration.php.bak';
+/* $old_registration = SPA_INCLUDES . 'spa-registration.php.bak';
 if (file_exists($old_registration)) {
     require_once $old_registration;
 }
-
+ */
 // FÁZA 4: REGISTRATION FALLBACK - Ak fragmentácia nefunguje
 /* $registration_file = SPA_INCLUDES . 'registration/spa-registration-helpers.php';
 
@@ -209,12 +223,13 @@ if (!file_exists($registration_file)) {
             require_once $file;
         }
     }
-} */
+}
+ */ 
 
 // ========== KONIEC FALLBACK ==========
 
 // FÁZA 5: STARÉ MONOLITNÉ MODULY
-$spa_legacy_modules = [
+/* $spa_legacy_modules = [
     'spa-admin-columns.php',
     'spa-meta-boxes.php',
     'spa-calendar.php',
@@ -231,11 +246,11 @@ foreach ($spa_legacy_modules as $module) {
     if (file_exists($file)) {
         require_once $file;
     }
-}
+} */
 
-/* 
+ 
 // FÁZA 4: REGISTRATION (Ak existuje fragmentovaný) - Voliteľné
-$spa_registration_modules = [
+/* $spa_registration_modules = [
     'registration/spa-registration-helpers.php',
     'registration/spa-registration-notifications.php',
     'registration/spa-registration-form.php',
@@ -248,11 +263,11 @@ foreach ($spa_registration_modules as $module) {
         $registration_modules_exist = true;
         require_once $file;
     }
-}
+} */
 
 // FÁZA 5: STARÉ MONOLITNÉ MODULY (Admin, Login, Frontend, atď.)
 // Načítavaj LEN ak NEFUNGUJÚ nové fragmentované verzie
-$spa_legacy_modules = [
+/* $spa_legacy_modules = [
     'spa-admin-columns.php',      // Admin columns
     'spa-meta-boxes.php',         // Meta boxy
     'spa-calendar.php',           // Calendar
@@ -269,15 +284,16 @@ foreach ($spa_legacy_modules as $module) {
     if (file_exists($file)) {
         require_once $file;
     }
-}
+} */
 
 // FÁZA 6: TAXONOMIES FALLBACK (Ak nie je v podadresári)
-if (!file_exists(SPA_INCLUDES . 'helpers/spa-taxonomies.php')) {
+/* if (!file_exists(SPA_INCLUDES . 'helpers/spa-taxonomies.php')) {
     $tax_file = SPA_INCLUDES . 'spa-taxonomies.php';
     if (file_exists($tax_file)) {
         require_once $tax_file;
     }
-} */
+} 
+ */
 
 /* ==========================
    ADMIN DASHBOARD WIDGET
