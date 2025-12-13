@@ -33,24 +33,26 @@ function spa_enqueue_styles() {
     // Parent theme
     wp_enqueue_style('parent-style', get_template_directory_uri() . '/style.css');
     
-    // Child theme - OPRAVA: Použiť presný version
+    // Child theme - Hardcoded version, SPA_VERSION ešte neexistuje
     wp_enqueue_style('child-style', get_stylesheet_directory_uri() . '/style.css', ['parent-style'], '26.1.0');
     
-    // SPA CSS - Shared - OPRAVA: Bez SPA_VERSION!
-    wp_enqueue_style('spa-variables', get_stylesheet_directory_uri() . '/assets/css/variables.css', [], '26.1.0');
-    wp_enqueue_style('spa-notices', get_stylesheet_directory_uri() . '/assets/css/admin/admin-notices.css', ['spa-variables'], '26.1.0');
+    // SPA CSS - Shared - Hardcoded paths
+    $spa_url = get_stylesheet_directory_uri();
+    wp_enqueue_style('spa-variables', $spa_url . '/assets/css/variables.css', [], '26.1.0');
+    wp_enqueue_style('spa-notices', $spa_url . '/assets/css/admin/admin-notices.css', ['spa-variables'], '26.1.0');
     
     // jQuery (potrebné pre AJAX)
     wp_enqueue_script('jquery');
 }
 
 function spa_enqueue_admin_styles() {
-    // Admin CSS - Shared
-    wp_enqueue_style('spa-variables', get_stylesheet_directory_uri() . '/assets/css/variables.css', [], '26.1.0');
+    // Admin CSS - Shared - Hardcoded paths
+    $spa_url = get_stylesheet_directory_uri();
+    wp_enqueue_style('spa-variables', $spa_url . '/assets/css/variables.css', [], '26.1.0');
     
     // Admin CSS - Core
-    wp_enqueue_style('spa-admin-core', get_stylesheet_directory_uri() . '/assets/css/admin/admin-core.css', ['spa-variables'], '26.1.0');
-    wp_enqueue_style('spa-admin-notices', get_stylesheet_directory_uri() . '/assets/css/admin/admin-notices.css', ['spa-variables'], '26.1.0');
+    wp_enqueue_style('spa-admin-core', $spa_url . '/assets/css/admin/admin-core.css', ['spa-variables'], '26.1.0');
+    wp_enqueue_style('spa-admin-notices', $spa_url . '/assets/css/admin/admin-notices.css', ['spa-variables'], '26.1.0');
 }
 
 /* ==========================
