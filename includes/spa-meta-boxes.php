@@ -281,11 +281,11 @@ function spa_group_pricing_meta_box($post) {function spa_group_pricing_meta_box(
     $price_external = get_post_meta($post->ID, 'spa_price_external_addon', true);
     
     $seasons = [
-        'sep_dec' => '🍂 September - December (09-12)',
-        'jan_mar' => '❄️ Január - Marec (01-03)',
-        'apr_jun' => '🌱 Apríl - Jún (04-06)',
-        'jul_aug' => '☀️ Júl - August (07-08) - Letné prázdniny'
-    ];
+            'sep_dec' => '🍂 September - December (09-12)',
+            'jan_mar' => '❄️ Január - Marec (01-03)',
+            'apr_jun' => '🌱 Apríl - Jún (04-06)',
+            'jul_aug' => '☀️ Júl - August (07-08) - Letné prázdniny'
+        ];
     
     $frequencies = ['1x' => '1x týždenne', '2x' => '2x týždenne', '3x' => '3x týždenne'];
     

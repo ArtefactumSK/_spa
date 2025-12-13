@@ -252,10 +252,10 @@ function spa_group_column_content($column, $post_id) {
                     if (!empty($prices)) {
                         // Zobraz s tooltipom - ktorá sezóna sa používa
                         $season_labels = [
-                            'oct_dec' => 'október-december',
+                            'sep_dec' => 'september-december',
                             'jan_mar' => 'január-marec',
                             'apr_jun' => 'apríl-jún',
-                            'jul_sep' => 'júl-september'
+                            'jul_aug' => 'júl-august'
                         ];
                         $label = $season_labels[$season_key] ?? 'aktuálna sezóna';
                         
