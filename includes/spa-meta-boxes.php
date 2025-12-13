@@ -242,110 +242,23 @@ function spa_group_meta_box($post) {
     <?php
 }
 
-/* ============================================================
-   META BOX: ROZVRH PROGRAMU (spa_group) - NOVÝ
-   Dynamické pridávanie viacerých termínov
-   ============================================================ */
-function spa_group_schedule_meta_box($post) {
-    wp_nonce_field('spa_save_group_schedule', 'spa_group_schedule_nonce');
-    
-    $schedule_json = get_post_meta($post->ID, 'spa_schedule', true);
-    $schedule = $schedule_json ? json_decode($schedule_json, true) : [];
-    
-    $days = [
-        'monday' => 'Pondelok',
-        'tuesday' => 'Utorok',
-        'wednesday' => 'Streda',
-        'thursday' => 'Štvrtok',
-        'friday' => 'Piatok',
-        'saturday' => 'Sobota',
-        'sunday' => 'Nedeľa'
-    ];
-    
-    ?>
-    <style>
-    .spa-schedule-box { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 4px; }
-    .spa-schedule-item { background: #fff; padding: 15px; border: 1px solid #ddd; margin-bottom: 15px; border-radius: 4px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-    .spa-schedule-item .day-select { min-width: 120px; }
-    .spa-schedule-item .time-input { width: 80px; }
-    .spa-schedule-item .remove-btn { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
-    .spa-schedule-item .remove-btn:hover { background: #c82333; }
-    .spa-add-btn { background: #0066FF; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; margin-top: 10px; }
-    .spa-add-btn:hover { background: #0052cc; }
-    .spa-help { color: #666; font-size: 12px; margin-top: 10px; }
-    </style>
-    
-    <div class="spa-schedule-box">
-        <h4>📅 Tréningy - Dni a časy</h4>
-        <p style="color: #666; margin-bottom: 15px;">Pridajte všetky dni a časy, kedy sa tento program koná.</p>
-        
-        <div id="spa-schedule-container">
-            <?php if (!empty($schedule)) : ?>
-                <?php foreach ($schedule as $index => $item) : ?>
-                    <div class="spa-schedule-item">
-                        <select name="spa_schedule[<?php echo $index; ?>][day]" class="day-select">
-                            <option value="">-- Vyber deň --</option>
-                            <?php foreach ($days as $key => $label) : ?>
-                                <option value="<?php echo $key; ?>" <?php selected($item['day'] ?? '', $key); ?>>
-                                    <?php echo $label; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        
-                        <span>od</span>
-                        <input type="time" name="spa_schedule[<?php echo $index; ?>][from]" value="<?php echo esc_attr($item['from'] ?? ''); ?>" class="time-input">
-                        
-                        <span>do</span>
-                        <input type="time" name="spa_schedule[<?php echo $index; ?>][to]" value="<?php echo esc_attr($item['to'] ?? ''); ?>" class="time-input">
-                        
-                        <button type="button" class="remove-btn" onclick="this.parentElement.remove();">Odstrániť</button>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
-        
-        <button type="button" class="spa-add-btn" onclick="spa_add_schedule_row();">+ Pridať ďalší termín</button>
-        
-        <p class="spa-help">Príklad: Utorok 10:00-11:00, Štvrtok 10:00-11:00 = 2x týždenne tréningy</p>
-    </div>
-    
-    <script>
-    var scheduleIndex = <?php echo !empty($schedule) ? max(array_keys($schedule)) + 1 : 0; ?>;
-    
-    function spa_add_schedule_row() {
-        var days = <?php echo json_encode($days); ?>;
-        var html = '<div class="spa-schedule-item">' +
-            '<select name="spa_schedule[' + scheduleIndex + '][day]" class="day-select">' +
-            '<option value="">-- Vyber deň --</option>';
-        
-        for (var key in days) {
-            html += '<option value="' + key + '">' + days[key] + '</option>';
-        }
-        
-        html += '</select>' +
-            '<span>od</span>' +
-            '<input type="time" name="spa_schedule[' + scheduleIndex + '][from]" class="time-input">' +
-            '<span>do</span>' +
-            '<input type="time" name="spa_schedule[' + scheduleIndex + '][to]" class="time-input">' +
-            '<button type="button" class="remove-btn" onclick="this.parentElement.remove();">Odstrániť</button>' +
-            '</div>';
-        
-        document.getElementById('spa-schedule-container').insertAdjacentHTML('beforeend', html);
-        scheduleIndex++;
-    }
-    </script>
-    <?php
-}
 
 /* ============================================================
-   META BOX: CENNÍK PROGRAMU (spa_group)
+   META BOX: CENNÍK PROGRAMU (NOVÝ - OLD LAYOUT)
    ============================================================ */
+
 function spa_group_pricing_meta_box($post) {
     wp_nonce_field('spa_save_group_pricing', 'spa_group_pricing_nonce');
     
     // Ceny za týždenne
     $price_1x = get_post_meta($post->ID, 'spa_price_1x_weekly', true);
     $price_2x = get_post_meta($post->ID, 'spa_price_2x_weekly', true);
+    
+    // Cena mesačne (paušál)
+    $price_monthly = get_post_meta($post->ID, 'spa_price_monthly', true);
+    
+    // Cena semester
+    $price_semester = get_post_meta($post->ID, 'spa_price_semester', true);
     
     // Externe miesta - príplatok
     $price_external = get_post_meta($post->ID, 'spa_price_external_addon', true);
@@ -356,107 +269,122 @@ function spa_group_pricing_meta_box($post) {
     
     ?>
     <style>
-    .spa-pricing-box { padding: 20px; background: #f9f9f9; border-radius: 4px; margin-bottom: 20px; }
-    .spa-pricing-box h4 { margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
-    .spa-price-row { display: flex; gap: 15px; margin-bottom: 15px; align-items: flex-end; }
-    .spa-price-row label { flex: 1; }
-    .spa-price-row input { width: 100%; padding: 8px; }
-    .spa-period-item { background: #fff; padding: 12px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; display: flex; gap: 10px; align-items: flex-end; }
-    .spa-period-item select, .spa-period-item input { flex: 1; padding: 6px; }
-    .spa-period-item button { padding: 6px 12px; background: #dc3545; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .spa-pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .spa-price-box { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 4px; }
+    .spa-price-box h4 { margin: 0 0 15px 0; font-size: 13px; font-weight: 600; color: #333; }
+    .spa-price-box .spa-price-input { display: flex; gap: 8px; align-items: center; }
+    .spa-price-box input { width: 100%; max-width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    .spa-price-box .spa-help { color: #666; font-size: 11px; margin-top: 8px; line-height: 1.4; }
+    
+    .spa-periods-box { background: #fffacd; padding: 20px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 20px; }
+    .spa-periods-box h4 { margin: 0 0 12px 0; font-size: 13px; font-weight: 600; }
+    .spa-period-item { background: #fff; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px; display: flex; gap: 8px; align-items: flex-end; }
+    .spa-period-item input { flex: 1; padding: 6px; font-size: 12px; }
+    .spa-period-item button { padding: 6px 10px; background: #dc3545; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; }
     .spa-period-item button:hover { background: #c82333; }
-    .spa-add-period-btn { background: #0066FF; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+    .spa-add-period-btn { background: #0066FF; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 8px; }
     .spa-add-period-btn:hover { background: #0052cc; }
+    
+    .spa-external-box { background: #fffacd; padding: 20px; border: 1px solid #ddd; border-radius: 4px; }
     </style>
     
-    <!-- TÝŽDENNÉ CENY -->
-    <div class="spa-pricing-box">
-        <h4>📅 Týždenné ceny (T:)</h4>
-        
-        <div class="spa-price-row">
-            <label>
-                T: 1x týždenne
+    <!-- TÝŽDENNÉ CENY - 2x2 GRID -->
+    <div class="spa-pricing-grid">
+        <div class="spa-price-box">
+            <h4>💳 Cena za 1x týždenne</h4>
+            <div class="spa-price-input">
                 <input type="number" name="spa_price_1x_weekly" value="<?php echo esc_attr($price_1x); ?>" step="0.01" min="0">
-            </label>
-            <span>€</span>
+                <span>€</span>
+            </div>
+            <p class="spa-help">Mesačná cena pri jednom tréningovom dni týždenne</p>
         </div>
         
-        <div class="spa-price-row">
-            <label>
-                T: 2x týždenne
+        <div class="spa-price-box">
+            <h4>💳 Cena za 2x týždenne</h4>
+            <div class="spa-price-input">
                 <input type="number" name="spa_price_2x_weekly" value="<?php echo esc_attr($price_2x); ?>" step="0.01" min="0">
-            </label>
-            <span>€</span>
+                <span>€</span>
+            </div>
+            <p class="spa-help">Mesačná cena pri dvoch tréningových dňoch týždenne (zvýhodnenosť)</p>
         </div>
         
-        <p class="spa-help" style="color: #666; font-size: 12px; margin: 10px 0 0 0;">
-            Mesačná cena pri jednom/dvoch tréningoch za týždeň
-        </p>
+        <div class="spa-price-box">
+            <h4>💰 Cena mesačne (paušál)</h4>
+            <div class="spa-price-input">
+                <input type="number" name="spa_price_monthly" value="<?php echo esc_attr($price_monthly); ?>" step="0.01" min="0">
+                <span>€</span>
+            </div>
+            <p class="spa-help">Voliteľné - fixná mesačná cena</p>
+        </div>
+        
+        <div class="spa-price-box">
+            <h4>💎 Cena za semester</h4>
+            <div class="spa-price-input">
+                <input type="number" name="spa_price_semester" value="<?php echo esc_attr($price_semester); ?>" step="0.01" min="0">
+                <span>€</span>
+            </div>
+            <p class="spa-help">Voliteľné - cena za celý školský polrok</p>
+        </div>
     </div>
     
     <!-- CENY ZA OBDOBIA -->
-    <div class="spa-pricing-box">
-        <h4>📆 Ceny za obdobia (O:)</h4>
-        <p style="color: #666; font-size: 12px; margin: 0 0 15px 0;">
-            Pridaj ceny za konkrétne obdobia (október-december, január-marec, atď.)
+    <div class="spa-periods-box">
+        <h4>📆 Ceny za jednotlivé obdobia (OD-DO mesiac)</h4>
+        <p style="color: #666; font-size: 12px; margin: 0 0 12px 0;">
+            Pridaj ceny za konkrétne obdobia (napr. október-december, január-marec)
         </p>
         
         <div id="spa-periods-container">
             <?php
             if (!empty($periods)) {
                 foreach ($periods as $idx => $period) {
-                    spa_render_period_row($idx, $period);
+                    spa_render_period_row_v2($idx, $period);
                 }
             }
             ?>
         </div>
         
-        <button type="button" class="spa-add-period-btn" onclick="spa_add_period_row()">
+        <button type="button" class="spa-add-period-btn" onclick="spa_add_period_row_v2()">
             + Pridať ďalšie obdobie
         </button>
     </div>
     
     <!-- EXTERNE MIESTA -->
-    <div class="spa-pricing-box" style="background: #fffacd;">
-        <h4>🏫 Príplatok pre eksterne priestory</h4>
-        
-        <div class="spa-price-row">
-            <label>
-                Príplatok k cene (€)
-                <input type="number" name="spa_price_external_addon" value="<?php echo esc_attr($price_external); ?>" step="0.01" min="0">
-            </label>
+    <div class="spa-external-box">
+        <h4>🏫 Príplatok pre externe priestory</h4>
+        <div class="spa-price-input" style="margin-bottom: 8px;">
+            <input type="number" name="spa_price_external_addon" value="<?php echo esc_attr($price_external); ?>" step="0.01" min="0">
+            <span>€</span>
         </div>
-        
-        <p class="spa-help" style="color: #666; font-size: 12px; margin: 10px 0 0 0;">
-            Príplatok k cene za tréning ak je v externých priestoroch
-        </p>
+        <p class="spa-help">Príplatok k cene ak je tréning v externých priestoroch (prenájom)</p>
     </div>
     
     <script>
-    var spa_period_counter = <?php echo !empty($periods) ? max(array_keys($periods)) + 1 : 0; ?>;
+    var spa_period_counter_v2 = <?php echo !empty($periods) ? max(array_keys($periods)) + 1 : 0; ?>;
     
-    function spa_add_period_row() {
+    function spa_add_period_row_v2() {
         var container = document.getElementById('spa-periods-container');
         var newRow = document.createElement('div');
         newRow.className = 'spa-period-item';
         newRow.innerHTML = `
-            <input type="text" name="spa_price_periods[${spa_period_counter}][name]" placeholder="napr. október-december" style="flex: 1.5;">
-            <input type="number" name="spa_price_periods[${spa_period_counter}][price]" placeholder="cena" step="0.01" min="0" style="flex: 1;">
+            <input type="text" name="spa_price_periods[${spa_period_counter_v2}][name]" placeholder="napr. október-december" style="flex: 1.5;">
+            <input type="number" name="spa_price_periods[${spa_period_counter_v2}][price]" placeholder="cena" step="0.01" min="0" style="flex: 1;">
             <span>€</span>
             <button type="button" onclick="this.parentElement.remove()">Odstrániť</button>
         `;
         container.appendChild(newRow);
-        spa_period_counter++;
+        spa_period_counter_v2++;
     }
     </script>
     
     <?php
 }
 
+
 /**
- * HELPER: Render jedného riadku obdobia
+ * HELPER: Render riadku obdobia v2
  */
-function spa_render_period_row($idx, $period) {
+function spa_render_period_row_v2($idx, $period) {
     $name = isset($period['name']) ? $period['name'] : '';
     $price = isset($period['price']) ? $period['price'] : '';
     
@@ -474,46 +402,166 @@ function spa_render_period_row($idx, $period) {
     <?php
 }
 
-/**
- * SAVE: Ulož ceny (pridaj do save hooku)
- */
+/* ============================================================
+   META BOX: ROZVRH PROGRAMU (NOVÝ - SELECT 5MIN)
+   ============================================================ */
 
-add_action('save_post_spa_group', 'spa_save_group_pricing_v2', 20);
-
-function spa_save_group_pricing_v2($post_id) {
-    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
-    if (!current_user_can('edit_post', $post_id)) return;
-    if (!isset($_POST['spa_group_pricing_nonce'])) return;
-    if (!wp_verify_nonce($_POST['spa_group_pricing_nonce'], 'spa_save_group_pricing')) return;
+function spa_group_schedule_meta_box($post) {
+    wp_nonce_field('spa_save_group_schedule', 'spa_group_schedule_nonce');
     
-    // TÝŽDENNÉ CENY
-    if (isset($_POST['spa_price_1x_weekly'])) {
-        update_post_meta($post_id, 'spa_price_1x_weekly', floatval($_POST['spa_price_1x_weekly']));
-    }
+    $schedule_json = get_post_meta($post->ID, 'spa_schedule', true);
+    $schedule = $schedule_json ? json_decode($schedule_json, true) : [];
     
-    if (isset($_POST['spa_price_2x_weekly'])) {
-        update_post_meta($post_id, 'spa_price_2x_weekly', floatval($_POST['spa_price_2x_weekly']));
-    }
+    $days = [
+        'monday' => 'Pondelok',
+        'tuesday' => 'Utorok',
+        'wednesday' => 'Streda',
+        'thursday' => 'Štvrtok',
+        'friday' => 'Piatok',
+        'saturday' => 'Sobota',
+        'sunday' => 'Nedeľa'
+    ];
     
-    // EXTERNE CENY
-    if (isset($_POST['spa_price_external_addon'])) {
-        update_post_meta($post_id, 'spa_price_external_addon', floatval($_POST['spa_price_external_addon']));
-    }
-    
-    // CENY ZA OBDOBIA
-    $periods = [];
-    if (isset($_POST['spa_price_periods']) && is_array($_POST['spa_price_periods'])) {
-        foreach ($_POST['spa_price_periods'] as $idx => $period) {
-            if (!empty($period['name']) && !empty($period['price'])) {
-                $periods[$idx] = [
-                    'name' => sanitize_text_field($period['name']),
-                    'price' => floatval($period['price'])
-                ];
-            }
+    // Generuj časy (00:00 - 23:55, po 5 minútach)
+    $times = [];
+    for ($h = 0; $h < 24; $h++) {
+        for ($m = 0; $m < 60; $m += 5) {
+            $time = sprintf("%02d:%02d", $h, $m);
+            $times[$time] = $time;
         }
     }
     
-    update_post_meta($post_id, 'spa_price_periods', json_encode($periods));
+    ?>
+    <style>
+    .spa-schedule-box { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 4px; }
+    .spa-schedule-item { background: #fff; padding: 15px; border: 1px solid #ddd; margin-bottom: 12px; border-radius: 4px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .spa-schedule-item .day-select { min-width: 140px; }
+    .spa-schedule-item .time-select { min-width: 100px; }
+    .spa-schedule-item .remove-btn { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+    .spa-schedule-item .remove-btn:hover { background: #c82333; }
+    .spa-add-schedule-btn { background: #0066FF; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; margin-top: 12px; }
+    .spa-add-schedule-btn:hover { background: #0052cc; }
+    .spa-help { color: #666; font-size: 12px; margin-top: 10px; }
+    </style>
+    
+    <div class="spa-schedule-box">
+        <p style="margin: 0 0 15px 0; color: #666;">Pridajte všetky dni a časy, kedy sa tento program koná.</p>
+        
+        <div id="spa-schedule-container">
+            <?php
+            if (!empty($schedule)) {
+                foreach ($schedule as $index => $item) {
+                    spa_render_schedule_row_v2($index, $item, $days, $times);
+                }
+            }
+            ?>
+        </div>
+        
+        <button type="button" class="spa-add-schedule-btn" onclick="spa_add_schedule_row_v2()">
+            + Pridať ďalší termín
+        </button>
+    </div>
+    
+    <script>
+    var spa_schedule_counter_v2 = <?php echo !empty($schedule) ? max(array_keys($schedule)) + 1 : 0; ?>;
+    var spa_times_select = <?php echo json_encode($times); ?>;
+    var spa_days_select = <?php echo json_encode($days); ?>;
+    
+    function spa_add_schedule_row_v2() {
+        var container = document.getElementById('spa-schedule-container');
+        var timeOptions = Object.entries(spa_times_select).map(([val, label]) => 
+            `<option value="${val}">${label}</option>`
+        ).join('');
+        var dayOptions = Object.entries(spa_days_select).map(([val, label]) => 
+            `<option value="${val}">${label}</option>`
+        ).join('');
+        
+        var newRow = document.createElement('div');
+        newRow.className = 'spa-schedule-item';
+        newRow.innerHTML = `
+            <select name="spa_schedule[${spa_schedule_counter_v2}][day]" class="day-select">
+                <option value="">-- Vyber deň --</option>
+                ${dayOptions}
+            </select>
+            
+            <span>od</span>
+            <select name="spa_schedule[${spa_schedule_counter_v2}][from]" class="time-select">
+                <option value="">-- od --</option>
+                ${timeOptions}
+            </select>
+            
+            <span>do</span>
+            <select name="spa_schedule[${spa_schedule_counter_v2}][to]" class="time-select">
+                <option value="">-- do --</option>
+                ${timeOptions}
+            </select>
+            
+            <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Odstrániť</button>
+        `;
+        container.appendChild(newRow);
+        spa_schedule_counter_v2++;
+    }
+    </script>
+    
+    <?php
+}
+
+/**
+ * HELPER: Render riadku rozvrhu v2
+ */
+function spa_render_schedule_row_v2($index, $item, $days, $times) {
+    $day = isset($item['day']) ? $item['day'] : '';
+    $from = isset($item['from']) ? $item['from'] : '';
+    $to = isset($item['to']) ? $item['to'] : '';
+    
+    $timeOptions = array_map(function($val) use ($from, $to) {
+        return sprintf(
+            '<option value="%s" %s>%s</option>',
+            esc_attr($val),
+            selected($from === $val || $to === $val, true, false),
+            esc_html($val)
+        );
+    }, array_keys($times));
+    
+    $dayOptions = array_map(function($val, $label) use ($day) {
+        return sprintf(
+            '<option value="%s" %s>%s</option>',
+            esc_attr($val),
+            selected($day === $val, true, false),
+            esc_html($label)
+        );
+    }, array_keys($days), array_values($days));
+    
+    ?>
+    <div class="spa-schedule-item">
+        <select name="spa_schedule[<?php echo $index; ?>][day]" class="day-select">
+            <option value="">-- Vyber deň --</option>
+            <?php echo implode('', $dayOptions); ?>
+        </select>
+        
+        <span>od</span>
+        <select name="spa_schedule[<?php echo $index; ?>][from]" class="time-select">
+            <option value="">-- od --</option>
+            <?php foreach ($times as $val => $label) : ?>
+                <option value="<?php echo esc_attr($val); ?>" <?php selected($from, $val); ?>>
+                    <?php echo esc_html($label); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        
+        <span>do</span>
+        <select name="spa_schedule[<?php echo $index; ?>][to]" class="time-select">
+            <option value="">-- do --</option>
+            <?php foreach ($times as $val => $label) : ?>
+                <option value="<?php echo esc_attr($val); ?>" <?php selected($to, $val); ?>>
+                    <?php echo esc_html($label); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        
+        <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Odstrániť</button>
+    </div>
+    <?php
 }
 
 /* ============================================================
@@ -819,4 +867,84 @@ function spa_ajax_load_icon() {
 
     echo json_encode(['success' => true, 'svg' => $svg_content]);
     wp_die();
+}
+
+* ============================================================
+   PRIDANIE VŠETKÝCH META BOXOV - AKTUALIZOVANÉ
+   ============================================================ */
+add_action('add_meta_boxes', 'spa_add_all_meta_boxes', 10);
+
+function spa_add_all_meta_boxes() {
+    
+    // PROGRAMY (spa_group)
+    add_meta_box(
+        'spa_group_details', 
+        '🤸 Detaily programu', 
+        'spa_group_meta_box', 
+        'spa_group', 
+        'normal', 
+        'high'
+    );
+    
+    add_meta_box(
+        'spa_group_schedule', 
+        '📅 Rozvrh programu', 
+        'spa_group_schedule_meta_box', 
+        'spa_group', 
+        'normal', 
+        'high'
+    );
+    
+    // PRICING META BOX - PRILOŽENÝ V spa-pricing-meta.php
+    // add_meta_box registruje 'spa_pricing_config' z spa_pricing_add_meta_box()
+    // POZOR: Musí byť zaregistrovaný v spa-pricing-meta.php, nie tu!
+    
+    // REGISTRÁCIE
+    add_meta_box(
+        'spa_registration_details', 
+        '📋 Detaily registrácie', 
+        'spa_registration_meta_box', 
+        'spa_registration', 
+        'normal', 
+        'high'
+    );
+    
+    // MIESTA (spa_place)
+    add_meta_box(
+        'spa_place_details', 
+        '📍 Detaily miesta', 
+        'spa_place_meta_box', 
+        'spa_place', 
+        'normal', 
+        'high'
+    );
+    
+    add_meta_box(
+        'spa_place_schedule', 
+        '📅 Rozvrh miesta', 
+        'spa_place_schedule_meta_box', 
+        'spa_place', 
+        'normal', 
+        'default'
+    );
+    
+    // UDALOSTI (spa_event)
+    add_meta_box(
+        'spa_event_details', 
+        '📅 Detaily udalosti', 
+        'spa_event_meta_box', 
+        'spa_event', 
+        'normal', 
+        'high'
+    );
+    
+    // DOCHÁDZKA (spa_attendance)
+    add_meta_box(
+        'spa_attendance_details', 
+        '✅ Záznam dochádzky', 
+        'spa_attendance_meta_box', 
+        'spa_attendance', 
+        'normal', 
+        'high'
+    );
 }

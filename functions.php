@@ -140,6 +140,10 @@ spa_load_module('registration/spa-registration-form.php');
 // FÁZA 4: IMPORT CSV V2
 spa_load_module('import/spa-import-csv-v2.php');
 
+// FÁZA 4+: PRICING
+spa_load_module('pricing/spa-pricing-meta.php');
+spa_load_module('pricing/spa-pricing-calculator.php');
+
 /* ==========================
    KRITICKÉ ADMIN MODULY (Musí byť aktívne!)
    ========================== */
