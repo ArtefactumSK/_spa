@@ -1,0 +1,168 @@
+/**
+ * Admin Core CSS - Bezpečnosť, skrytie prvkov, admin UI
+ * 
+ * @package Samuel Piasecký ACADEMY
+ * @subpackage CSS/Admin
+ * @version 1.0.0
+ * 
+ * PARENT STYLES: variables.css
+ * CHILD STYLES: žiadne
+ * 
+ * COMPONENTS STYLED:
+ * - Menu skrytie (Blocksy, Elementor)
+ * - Email settings (admin_email)
+ * - Quick order inputs
+ * - Admin elements
+ * 
+ * REPLACES: Inline CSS z spa-filters-hooks.php::spa_hide_admin_elements()
+ * LOADED: wp_enqueue_style() v functions.php
+ */
+
+/* ===================================
+   SKRYTIE BLOCKSY MENU ITEMS
+   =================================== */
+
+a.page-title-action[href*="post-new.php?post_type=ct_content_block"],
+#adminmenu a[href*="ct-dashboard-account"],
+#adminmenu .wp-first-item a[href*="ct-dashboard"],
+#adminmenu a[href*="site-editor.php"],
+#adminmenu a[href*="customize.php?return=%2Fwp-admin%2Fthemes.php"],
+.theme-actions a[href*="wp-admin%2Fthemes.php"],
+a.hide-if-no-customize {
+    display: none !important;
+}
+
+/* ===================================
+   SKRYTIE ELEMENTOR ADMIN ITEMS
+   =================================== */
+
+#adminmenu a[href*="elementor"],
+#wp-admin-bar-elementor-maintenance-on {
+    display: none !important;
+}
+
+/* ===================================
+   SKRYTIE TRETÍCH STRÁN PLUGINOV
+   =================================== */
+
+#wp_mail_smtp_reports_widget_lite,
+#wp-admin-bar-litespeed-bar-manage,
+#wp-admin-bar-litespeed-bar-setting,
+#wp-admin-bar-litespeed-bar-imgoptm {
+    display: none !important;
+}
+
+/* ===================================
+   SKRYTIE TRANSLATE PRESS
+   =================================== */
+
+.ab-submenu li a[href*="options-general.php?page=translate-press"] {
+    display: none !important;
+}
+
+/* ===================================
+   SKRYTIE EMAIL SETTINGS PRE NON-ADMIN
+   =================================== */
+
+#new_admin_email,
+#new_admin_email + p.description,
+label[for="new_admin_email"] {
+    display: none !important;
+}
+
+/* ===================================
+   QUICK ORDER INPUT - SPA GROUPS
+   =================================== */
+
+input.spa-quick-order {
+    border: var(--spa-border-width) solid var(--spa-border-color);
+    border-radius: var(--spa-border-radius);
+    padding: var(--spa-spacing-sm);
+    font-family: var(--spa-font-family);
+    font-size: var(--spa-font-size-base);
+    text-align: center;
+    width: 60px;
+    height: 36px;
+    
+    background-color: #ffffff;
+    color: var(--spa-color-dark);
+    
+    transition: 
+        border-color var(--spa-transition-base),
+        background-color var(--spa-transition-base),
+        box-shadow var(--spa-transition-base);
+}
+
+input.spa-quick-order:hover {
+    border-color: var(--spa-color-primary);
+    box-shadow: var(--spa-shadow-base);
+}
+
+input.spa-quick-order:focus {
+    outline: none;
+    border-color: var(--spa-color-primary);
+    background-color: #fafafa;
+    box-shadow: 0 0 0 3px rgba(255, 20, 57, 0.1);
+}
+
+input.spa-quick-order[data-saved="true"] {
+    background-color: #d4edda;
+    border-color: var(--spa-color-success);
+    animation: spa-saved-blink 0.5s ease-in-out;
+}
+
+@keyframes spa-saved-blink {
+    0% {
+        background-color: #d4edda;
+    }
+    50% {
+        background-color: #c3e6cb;
+    }
+    100% {
+        background-color: #d4edda;
+    }
+}
+
+/* ===================================
+   ADMIN SECTION STYLING
+   =================================== */
+
+.spa-admin-section {
+    background: #ffffff;
+    border: var(--spa-border-width) solid var(--spa-border-color);
+    border-radius: var(--spa-border-radius);
+    padding: var(--spa-spacing-lg);
+    margin: var(--spa-spacing-lg) 0;
+    box-shadow: var(--spa-shadow-sm);
+}
+
+.spa-admin-section h2 {
+    margin-top: 0;
+    margin-bottom: var(--spa-spacing-md);
+    color: var(--spa-color-dark);
+    font-size: var(--spa-font-size-xl);
+    font-weight: var(--spa-font-weight-semibold);
+}
+
+.spa-admin-section h3 {
+    margin-top: var(--spa-spacing-lg);
+    margin-bottom: var(--spa-spacing-sm);
+    color: var(--spa-color-dark);
+    font-size: var(--spa-font-size-lg);
+    font-weight: var(--spa-font-weight-medium);
+}
+
+/* ===================================
+   RESPONSIVE
+   =================================== */
+
+@media (max-width: 768px) {
+    input.spa-quick-order {
+        width: 50px;
+        font-size: var(--spa-font-size-sm);
+    }
+    
+    .spa-admin-section {
+        padding: var(--spa-spacing-md);
+    }
+}

@@ -1,0 +1,214 @@
+/**
+ * Admin & Frontend Notices CSS - Alert a notification komponenty
+ * 
+ * @package Samuel Piasecký ACADEMY
+ * @subpackage CSS/Admin
+ * @version 1.0.0
+ * 
+ * PARENT STYLES: variables.css
+ * CHILD STYLES: žiadne
+ * 
+ * COMPONENTS:
+ * - .spa-notice (base container)
+ * - .spa-notice-success (zelená)
+ * - .spa-notice-error (červená)
+ * - .spa-notice-warning (oranžová)
+ * - .spa-notice-info (modrá)
+ * 
+ * REPLACES: Inline CSS z spa-helpers.php::spa_display_notice()
+ * LOADED: wp_enqueue_style() v functions.php
+ */
+
+/* ===================================
+   NOTICE BASE STYLING
+   =================================== */
+
+.spa-notice {
+    border-left: 4px solid;
+    border-radius: var(--spa-border-radius);
+    padding: var(--spa-spacing-md);
+    margin: var(--spa-spacing-lg) 0;
+    
+    display: flex;
+    align-items: center;
+    gap: var(--spa-spacing-md);
+    
+    font-family: var(--spa-font-family);
+    font-size: var(--spa-font-size-base);
+    line-height: var(--spa-line-height-normal);
+    
+    box-shadow: var(--spa-shadow-base);
+    animation: spa-notice-enter 0.3s ease-in-out;
+}
+
+.spa-notice span:first-child {
+    font-size: 20px;
+    min-width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.spa-notice span:last-child {
+    flex: 1;
+}
+
+/* ===================================
+   NOTICE TYPES - SUCCESS
+   =================================== */
+
+.spa-notice-success {
+    background-color: #f1f8f4;
+    border-left-color: var(--spa-color-success);
+    color: #2d5016;
+}
+
+.spa-notice-success span:first-child {
+    color: var(--spa-color-success);
+}
+
+/* ===================================
+   NOTICE TYPES - ERROR
+   =================================== */
+
+.spa-notice-error {
+    background-color: #fdeaea;
+    border-left-color: var(--spa-color-error);
+    color: #991b1b;
+}
+
+.spa-notice-error span:first-child {
+    color: var(--spa-color-error);
+}
+
+/* ===================================
+   NOTICE TYPES - WARNING
+   =================================== */
+
+.spa-notice-warning {
+    background-color: #fff4f1;
+    border-left-color: var(--spa-color-warning);
+    color: #7c2d12;
+}
+
+.spa-notice-warning span:first-child {
+    color: var(--spa-color-warning);
+}
+
+/* ===================================
+   NOTICE TYPES - INFO
+   =================================== */
+
+.spa-notice-info {
+    background-color: #eff6ff;
+    border-left-color: var(--spa-color-info);
+    color: #082f49;
+}
+
+.spa-notice-info span:first-child {
+    color: var(--spa-color-info);
+}
+
+/* ===================================
+   ANIMATIONS
+   =================================== */
+
+@keyframes spa-notice-enter {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spa-notice-exit {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* ===================================
+   CLOSE BUTTON (FUTURE)
+   =================================== */
+
+.spa-notice .spa-notice-close {
+    margin-left: var(--spa-spacing-md);
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: inherit;
+    opacity: var(--spa-opacity-hover);
+    transition: opacity var(--spa-transition-base);
+    flex-shrink: 0;
+}
+
+.spa-notice .spa-notice-close:hover {
+    opacity: 1;
+}
+
+/* ===================================
+   DISMISSIBLE VARIANT
+   =================================== */
+
+.spa-notice.spa-notice-dismissible {
+    position: relative;
+    padding-right: 40px;
+}
+
+.spa-notice.spa-notice-dismissible .spa-notice-close {
+    position: absolute;
+    right: var(--spa-spacing-md);
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* ===================================
+   RESPONSIVE
+   =================================== */
+
+@media (max-width: 768px) {
+    .spa-notice {
+        padding: var(--spa-spacing-md);
+        font-size: var(--spa-font-size-sm);
+        gap: var(--spa-spacing-sm);
+    }
+    
+    .spa-notice span:first-child {
+        font-size: 18px;
+    }
+    
+    .spa-notice.spa-notice-dismissible {
+        padding-right: 36px;
+    }
+    
+    .spa-notice.spa-notice-dismissible .spa-notice-close {
+        right: var(--spa-spacing-sm);
+    }
+}
+
+@media (max-width: 480px) {
+    .spa-notice {
+        padding: var(--spa-spacing-sm);
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .spa-notice span:first-child {
+        width: 100%;
+        margin-bottom: var(--spa-spacing-xs);
+    }
+    
+    .spa-notice.spa-notice-dismissible {
+        padding-right: var(--spa-spacing-md);
+    }
+}

@@ -19,7 +19,6 @@
  * FUNCTIONS DEFINED:
  * - spa_restrict_admin_access()
  * - spa_remove_menu_pages()
- * - spa_hide_admin_elements()
  * - spa_restrict_admin_email_update()
  * - spa_login_redirect()
  * - spa_filter_users_for_editor()
@@ -105,38 +104,6 @@ function spa_remove_menu_pages() {
     }
 }
 
-/* =============================================
-   CSS SKRYTIE PRVKOV V ADMIN
-   ============================================= */
-
-add_action('admin_head', 'spa_hide_admin_elements');
-
-function spa_hide_admin_elements() {
-    global $current_user;
-    wp_get_current_user();
-    
-    if ($current_user->user_login === 'artefactum') {
-        return;
-    }
-    
-    ?>
-    <style>
-    a.page-title-action[href*="post-new.php?post_type=ct_content_block"],
-    #adminmenu a[href*="ct-dashboard-account"],
-    #adminmenu .wp-first-item a[href*="ct-dashboard"],
-    #adminmenu a[href*="site-editor.php"],
-    a.hide-if-no-customize,
-    .ab-submenu li a[href*="options-general.php?page=translate-press"],
-    #wp_mail_smtp_reports_widget_lite,
-    #wp-admin-bar-litespeed-bar-manage,
-    #new_admin_email,
-    #new_admin_email + p.description,
-    label[for="new_admin_email"] {
-        display: none !important;
-    }
-    </style>
-    <?php
-}
 
 /* =============================================
    ZAMEDZENIE ÚPRAVY ADMIN EMAIL
