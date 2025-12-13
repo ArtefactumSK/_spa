@@ -180,19 +180,7 @@ foreach ($spa_user_modules as $module) {
     }
 }
 
-// FÁZA 4: REGISTRATION
-$spa_registration_modules = [
-    'registration/spa-registration-helpers.php',
-    'registration/spa-registration-notifications.php',
-    'registration/spa-registration-form.php',
-];
 
-foreach ($spa_registration_modules as $module) {
-    $file = SPA_INCLUDES . $module;
-    if (file_exists($file)) {
-        require_once $file;
-    }
-}
 // FÁZA 4: REGISTRATION - FALLBACK NA STARÉ RIEŠENIE
 /* $old_registration = SPA_INCLUDES . 'spa-registration.php.bak';
 if (file_exists($old_registration)) {
