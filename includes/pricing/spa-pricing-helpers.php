@@ -29,6 +29,9 @@ if (!defined('ABSPATH')) {
 /* ==================================================
    PUBLIC API: Získaj cenu podľa sezóny a frekvencie
    ================================================== */
+* ==================================================
+   PUBLIC API: Získaj cenu podľa sezóny a frekvencie
+   ================================================== */
 
 function spa_get_program_price_by_season_and_frequency($program_id, $season_key, $frequency = 1) {
     $program = get_post($program_id);
@@ -74,7 +77,7 @@ function spa_get_program_price_by_frequency($program_id, $frequency = 1, $date_s
 }
 
 /* ==================================================
-   PUBLIC API: Sezóna podľa dátumu
+   PUBLIC API: Sezóna podľa dátumu (ŠKOLSKÝ ROK)
    ================================================== */
 
 function spa_get_season_for_date($date_string) {
@@ -82,15 +85,40 @@ function spa_get_season_for_date($date_string) {
         $date = new DateTime($date_string);
         $month = intval($date->format('m'));
     } catch (Exception $e) {
-        return 'oct_dec'; // Default
+        return 'sep_dec'; // Default
     }
     
-    if ($month >= 10 || $month <= 12) return 'oct_dec';   // 10-12
-    if ($month >= 1 && $month <= 3) return 'jan_mar';     // 1-3
-    if ($month >= 4 && $month <= 6) return 'apr_jun';     // 4-6
-    if ($month >= 7 && $month <= 9) return 'jul_sep';     // 7-9
+    // Školský rok začína SEPTEMBER
+    if ($month >= 9 && $month <= 12) return 'sep_dec';    // 09-12 (september-december)
+    if ($month >= 1 && $month <= 3) return 'jan_mar';     // 01-03 (január-marec)
+    if ($month >= 4 && $month <= 6) return 'apr_jun';     // 04-06 (apríl-jún)
+    if ($month >= 7 && $month <= 8) return 'jul_aug';     // 07-08 (júl-august, letné prázdniny)
     
-    return 'oct_dec';
+    return 'sep_dec';
+}
+
+/* ==================================================
+   PUBLIC API: Sezóna pre AKTUÁLNY dátum (dnes)
+   ================================================== */
+
+function spa_get_season_for_current_date() {
+    $current_month = intval(date('m'));
+    
+    // Školský rok
+    if ($current_month >= 9 && $current_month <= 12) {
+        return 'sep_dec';
+    }
+    if ($current_month >= 1 && $current_month <= 3) {
+        return 'jan_mar';
+    }
+    if ($current_month >= 4 && $current_month <= 6) {
+        return 'apr_jun';
+    }
+    if ($current_month >= 7 && $current_month <= 8) {
+        return 'jul_aug';
+    }
+    
+    return 'sep_dec'; // Default
 }
 
 /* ==================================================

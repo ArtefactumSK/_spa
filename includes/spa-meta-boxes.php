@@ -261,17 +261,17 @@ function spa_group_meta_box($post) {
    META BOX: CENNÍK PROGRAMU (SEZÓNNE CENY - NOVÝ FORMÁT)
    ============================================================ */
 
-function spa_group_pricing_meta_box($post) {
+function spa_group_pricing_meta_box($post) {function spa_group_pricing_meta_box($post) {
     wp_nonce_field('spa_save_group_pricing', 'spa_group_pricing_nonce');
     
     // NOVÝ FORMÁT: Sezónne ceny
     $pricing_seasons = get_post_meta($post->ID, 'spa_pricing_seasons', true);
     if (!is_array($pricing_seasons)) {
         $pricing_seasons = [
-            'oct_dec' => ['1x' => 0, '2x' => 0, '3x' => 0],
+            'sep_dec' => ['1x' => 0, '2x' => 0, '3x' => 0],
             'jan_mar' => ['1x' => 0, '2x' => 0, '3x' => 0],
             'apr_jun' => ['1x' => 0, '2x' => 0, '3x' => 0],
-            'jul_sep' => ['1x' => 0, '2x' => 0, '3x' => 0]
+            'jul_aug' => ['1x' => 0, '2x' => 0, '3x' => 0]
         ];
     }
     
@@ -281,10 +281,10 @@ function spa_group_pricing_meta_box($post) {
     $price_external = get_post_meta($post->ID, 'spa_price_external_addon', true);
     
     $seasons = [
-        'oct_dec' => '🍂 Október - December (10-12)',
+        'sep_dec' => '🍂 September - December (09-12)',
         'jan_mar' => '❄️ Január - Marec (01-03)',
         'apr_jun' => '🌱 Apríl - Jún (04-06)',
-        'jul_sep' => '☀️ Júl - September (07-09)'
+        'jul_aug' => '☀️ Júl - August (07-08) - Letné prázdniny'
     ];
     
     $frequencies = ['1x' => '1x týždenne', '2x' => '2x týždenne', '3x' => '3x týždenne'];
@@ -657,8 +657,6 @@ function spa_group_pricing_save($post_id, $post) {
         update_post_meta($post_id, 'spa_price_external_addon', floatval($_POST['spa_price_external_addon']));
     }
 }
-
-
 
 /**
  * HELPER: Render riadku rozvrhu v2

@@ -224,16 +224,65 @@ function spa_group_column_content($column, $post_id) {
             break;
         
         case 'grp_price':
-            $price_1x = get_post_meta($post_id, 'spa_price_1x_weekly', true);
-            $price_2x = get_post_meta($post_id, 'spa_price_2x_weekly', true);
-            $prices = array();
-            if ($price_1x) {
-                $prices[] = number_format(floatval($price_1x), 0) . '€';
+            // NOVÝ FORMÁT: Sezónne ceny - zobraz AKTUÁLNU sezónu
+            $pricing_seasons = get_post_meta($post_id, 'spa_pricing_seasons', true);
+            
+            if (is_array($pricing_seasons) && !empty($pricing_seasons)) {
+                // Zisti aktuálnu sezónu
+                $current_month = intval(date('m'));
+                
+                // Mapovanie mesiacov na sezóny
+                $season_key = spa_get_season_for_current_date();
+                $season_data = $pricing_seasons[$season_key] ?? [];
+                
+                if (!empty($season_data)) {
+                    $prices = [];
+                    
+                    // Zobraz ceny pre túto sezónu (1x, 2x, 3x)
+                    if (!empty($season_data['1x']) && floatval($season_data['1x']) > 0) {
+                        $prices[] = number_format(floatval($season_data['1x']), 0) . '€';
+                    }
+                    if (!empty($season_data['2x']) && floatval($season_data['2x']) > 0) {
+                        $prices[] = number_format(floatval($season_data['2x']), 0) . '€';
+                    }
+                    if (!empty($season_data['3x']) && floatval($season_data['3x']) > 0) {
+                        $prices[] = number_format(floatval($season_data['3x']), 0) . '€';
+                    }
+                    
+                    if (!empty($prices)) {
+                        // Zobraz s tooltipom - ktorá sezóna sa používa
+                        $season_labels = [
+                            'oct_dec' => 'október-december',
+                            'jan_mar' => 'január-marec',
+                            'apr_jun' => 'apríl-jún',
+                            'jul_sep' => 'júl-september'
+                        ];
+                        $label = $season_labels[$season_key] ?? 'aktuálna sezóna';
+                        
+                        echo '<span title="Cena v ' . esc_attr($label) . ' (' . $season_key . ')">';
+                        echo esc_html(implode(', ', $prices));
+                        echo '</span>';
+                    } else {
+                        echo '-';
+                    }
+                } else {
+                    echo '-';
+                }
+            } else {
+                // FALLBACK: Staré polia (pre kompatibilitu)
+                $price_1x = get_post_meta($post_id, 'spa_price_1x_weekly', true);
+                $price_2x = get_post_meta($post_id, 'spa_price_2x_weekly', true);
+                
+                $prices = [];
+                if ($price_1x && floatval($price_1x) > 0) {
+                    $prices[] = number_format(floatval($price_1x), 0) . '€';
+                }
+                if ($price_2x && floatval($price_2x) > 0) {
+                    $prices[] = number_format(floatval($price_2x), 0) . '€';
+                }
+                
+                echo !empty($prices) ? esc_html(implode(', ', $prices)) : '-';
             }
-            if ($price_2x) {
-                $prices[] = number_format(floatval($price_2x), 0) . '€';
-            }
-            echo !empty($prices) ? esc_html(implode(', ', $prices)) : '-';
             break;
         
         case 'grp_count':

@@ -1,18 +1,10 @@
 <?php
 /**
- * SPA Pricing Migration - Konverzia starých cien na sezónne
+ * SPA Pricing Migration - Konverzia starých cien na sezónne (OPRAVENÁ)
  * 
  * @package Samuel Piasecký ACADEMY
  * @subpackage Pricing
- * @version 1.0.0
- * 
- * ÚČEL:
- * Automaticky konvertovať staré meta polia:
- * - spa_price_1x_weekly → spa_pricing_seasons[oct_dec][1x]
- * - spa_price_2x_weekly → spa_pricing_seasons[oct_dec][2x]
- * - spa_price_periods → spa_pricing_seasons[jan_mar][...] atď.
- * 
- * Vykonané len raz pri prvom načítaní
+ * @version 2.0.0 - OPRAVA: Správne mapovanie cien podľa periods
  */
 
 if (!defined('ABSPATH')) {
@@ -20,24 +12,20 @@ if (!defined('ABSPATH')) {
 }
 
 /* ==================================================
-   ADMIN INIT: Spusti migráciu
+   ADMIN INIT: Spusti migráciu (raz)
    ================================================== */
 
 add_action('admin_init', 'spa_pricing_migration_check');
 
 function spa_pricing_migration_check() {
-    // Flag na kontrolu či bola migrácia vykonaná
-    $migration_done = get_option('spa_pricing_migration_v1_done', false);
+    $migration_done = get_option('spa_pricing_migration_v2_done', false);
     
     if ($migration_done) {
-        return; // Migrácia už prebehla
+        return;
     }
     
-    // Vykonaj migráciu
     spa_migrate_pricing_to_seasons();
-    
-    // Označ ako hotovo
-    update_option('spa_pricing_migration_v1_done', true);
+    update_option('spa_pricing_migration_v2_done', true);
 }
 
 /* ==================================================
@@ -45,7 +33,6 @@ function spa_pricing_migration_check() {
    ================================================== */
 
 function spa_migrate_pricing_to_seasons() {
-    // Zisti všetky programy
     $programs = get_posts([
         'post_type' => 'spa_group',
         'posts_per_page' => -1,
@@ -66,59 +53,124 @@ function spa_migrate_single_program_pricing($program_id) {
     $existing_seasons = get_post_meta($program_id, 'spa_pricing_seasons', true);
     
     if (is_array($existing_seasons) && !empty($existing_seasons)) {
-        return; // Už má sezónne ceny, nemigruj
+        // Zisti či sú to iba defaulty (všetky 0)
+        $has_data = false;
+        foreach ($existing_seasons as $season => $freqs) {
+            foreach ($freqs as $freq => $price) {
+                if (floatval($price) > 0) {
+                    $has_data = true;
+                    break 2;
+                }
+            }
+        }
+        
+        if ($has_data) {
+            return; // Už má platné sezónne ceny, nemigruj
+        }
     }
     
     $pricing_seasons = [
-        'oct_dec' => ['1x' => 0, '2x' => 0, '3x' => 0],
+        'sep_dec' => ['1x' => 0, '2x' => 0, '3x' => 0],
         'jan_mar' => ['1x' => 0, '2x' => 0, '3x' => 0],
         'apr_jun' => ['1x' => 0, '2x' => 0, '3x' => 0],
-        'jul_sep' => ['1x' => 0, '2x' => 0, '3x' => 0]
+        'jul_aug' => ['1x' => 0, '2x' => 0, '3x' => 0]
     ];
     
-    // 1. STARÉ POLIA: 1x_weekly, 2x_weekly → october-december
-    $price_1x = floatval(get_post_meta($program_id, 'spa_price_1x_weekly', true) ?? 0);
-    $price_2x = floatval(get_post_meta($program_id, 'spa_price_2x_weekly', true) ?? 0);
+    // ==================================================
+    // STRATÉGIA MIGRÁCIE:
+    // 1. Ak existuje spa_price_periods → mapuj podľa periode
+    // 2. Ak existuje iba 1x_weekly a 2x_weekly → všetky sezóny dostanú rovnaké ceny
+    // ==================================================
     
-    if ($price_1x > 0 || $price_2x > 0) {
-        $pricing_seasons['oct_dec']['1x'] = $price_1x;
-        $pricing_seasons['oct_dec']['2x'] = $price_2x;
-        $pricing_seasons['oct_dec']['3x'] = $price_2x + ($price_2x - $price_1x); // Lineárny odhad
-    }
-    
-    // 2. STARÉ POLIA: spa_price_periods → mapuj na sezóny
+    // 1. STARÉ POLIA: spa_price_periods (má sezóny)
     $periods_json = get_post_meta($program_id, 'spa_price_periods', true);
     
     if ($periods_json) {
         $periods = is_string($periods_json) ? json_decode($periods_json, true) : $periods_json;
         
-        if (is_array($periods)) {
+        if (is_array($periods) && !empty($periods)) {
+            // Máme explicitne sezóny → mapuj ich
             foreach ($periods as $period) {
                 $name = strtolower($period['name'] ?? '');
                 $price = floatval($period['price'] ?? 0);
                 
-                // Rozpoznaj sezónu z názvu
-                if (strpos($name, 'október') !== false || strpos($name, 'oktober') !== false || strpos($name, 'december') !== false) {
-                    $pricing_seasons['oct_dec']['1x'] = $price;
-                    $pricing_seasons['oct_dec']['2x'] = $price * 1.3; // Odhad 2x
-                } elseif (strpos($name, 'január') !== false || strpos($name, 'januar') !== false || strpos($name, 'január') !== false || strpos($name, 'marec') !== false) {
+                if ($price <= 0) continue;
+                
+                // Zisti sezónu z názvu
+                if (spa_period_contains_months($name, [9, 10, 11, 12])) {
+                    $pricing_seasons['sep_dec']['1x'] = $price;
+                    $pricing_seasons['sep_dec']['2x'] = round($price * 1.3, 2);
+                    $pricing_seasons['sep_dec']['3x'] = round($price * 1.65, 2);
+                } elseif (spa_period_contains_months($name, [1, 2, 3])) {
                     $pricing_seasons['jan_mar']['1x'] = $price;
-                    $pricing_seasons['jan_mar']['2x'] = $price * 1.3;
-                } elseif (strpos($name, 'apríl') !== false || strpos($name, 'april') !== false || strpos($name, 'jún') !== false || strpos($name, 'jun') !== false) {
+                    $pricing_seasons['jan_mar']['2x'] = round($price * 1.3, 2);
+                    $pricing_seasons['jan_mar']['3x'] = round($price * 1.65, 2);
+                } elseif (spa_period_contains_months($name, [4, 5, 6])) {
                     $pricing_seasons['apr_jun']['1x'] = $price;
-                    $pricing_seasons['apr_jun']['2x'] = $price * 1.3;
-                } elseif (strpos($name, 'júl') !== false || strpos($name, 'jul') !== false || strpos($name, 'september') !== false) {
-                    $pricing_seasons['jul_sep']['1x'] = $price;
-                    $pricing_seasons['jul_sep']['2x'] = $price * 1.3;
+                    $pricing_seasons['apr_jun']['2x'] = round($price * 1.3, 2);
+                    $pricing_seasons['apr_jun']['3x'] = round($price * 1.65, 2);
+                } elseif (spa_period_contains_months($name, [7, 8])) {
+                    $pricing_seasons['jul_aug']['1x'] = $price;
+                    $pricing_seasons['jul_aug']['2x'] = round($price * 1.3, 2);
+                    $pricing_seasons['jul_aug']['3x'] = round($price * 1.65, 2);
                 }
+            }
+        }
+    } else {
+        // 2. STARÉ POLIA: iba 1x_weekly a 2x_weekly (bez sezón) 
+        // → všetky sezóny dostanú rovnaké ceny
+        $price_1x = floatval(get_post_meta($program_id, 'spa_price_1x_weekly', true) ?? 0);
+        $price_2x = floatval(get_post_meta($program_id, 'spa_price_2x_weekly', true) ?? 0);
+        
+        if ($price_1x > 0 || $price_2x > 0) {
+            // Majú staré ceny bez sezón → naplň všetky sezóny rovnakými cenami
+            foreach ($pricing_seasons as $season_key => &$freqs) {
+                $freqs['1x'] = $price_1x;
+                $freqs['2x'] = $price_2x > 0 ? $price_2x : round($price_1x * 1.3, 2);
+                $freqs['3x'] = round($price_1x * 1.65, 2);
             }
         }
     }
     
-    // Uložiť migrované sezónne ceny
-    if (!empty($pricing_seasons)) {
+    // Uložiť migrované ceny (len ak sú nenulové)
+    $has_prices = false;
+    foreach ($pricing_seasons as $season => $freqs) {
+        foreach ($freqs as $freq => $price) {
+            if ($price > 0) {
+                $has_prices = true;
+                break 2;
+            }
+        }
+    }
+    
+    if ($has_prices) {
         update_post_meta($program_id, 'spa_pricing_seasons', $pricing_seasons);
     }
+}
+
+/* ==================================================
+   HELPER: Zisti či period obsahuje mesiace
+   ================================================== */
+
+function spa_period_contains_months($period_name, $months) {
+    $period_lower = strtolower($period_name);
+    
+    // Mesiace v SK a EN
+    $month_names = [
+        'september' => 9, 'september' => 9,
+        'oktober' => 10, 'october' => 10, 'november' => 11, 'december' => 12,
+        'januar' => 1, 'january' => 1, 'februar' => 2, 'february' => 2, 'marec' => 3, 'march' => 3,
+        'april' => 4, 'apríl' => 4, 'maj' => 5, 'may' => 5, 'jun' => 6, 'june' => 6,
+        'júl' => 7, 'july' => 7, 'august' => 8
+    ];
+    
+    foreach ($month_names as $name => $month_num) {
+        if (in_array($month_num, $months) && strpos($period_lower, $name) !== false) {
+            return true;
+        }
+    }
+    
+    return false;
 }
 
 /* ==================================================
@@ -145,7 +197,7 @@ function spa_pricing_migration_page() {
         
         <?php
         if (isset($_POST['spa_run_migration']) && wp_verify_nonce($_POST['_wpnonce'], 'spa_migration_action')) {
-            delete_option('spa_pricing_migration_v1_done');
+            delete_option('spa_pricing_migration_v2_done');
             spa_pricing_migration_check();
             
             echo '<div class="notice notice-success"><p>✅ Migrácia dokončená!</p></div>';
@@ -160,9 +212,9 @@ function spa_pricing_migration_page() {
             </p>
             
             <ul style="list-style: disc; margin-left: 20px; color: #666;">
-                <li><code>spa_price_1x_weekly</code> → sezónne ceny</li>
-                <li><code>spa_price_2x_weekly</code> → sezónne ceny</li>
-                <li><code>spa_price_periods</code> → mapovanie na sezóny</li>
+                <li><code>spa_price_periods</code> → mapovanie na sezóny (smart)</li>
+                <li><code>spa_price_1x_weekly</code> → všetky sezóny (fallback)</li>
+                <li><code>spa_price_2x_weekly</code> → odhad na ostatné frekvencie</li>
             </ul>
             
             <p style="color: #d63638; font-weight: 600;">
@@ -182,20 +234,27 @@ function spa_pricing_migration_page() {
             <h3>Status</h3>
             
             <?php
-            $migration_done = get_option('spa_pricing_migration_v1_done', false);
+            $migration_done = get_option('spa_pricing_migration_v2_done', false);
             $programs = get_posts(['post_type' => 'spa_group', 'posts_per_page' => -1, 'fields' => 'ids']);
             $migrated = 0;
             
             foreach ($programs as $pid) {
                 $seasons = get_post_meta($pid, 'spa_pricing_seasons', true);
-                if (is_array($seasons) && !empty($seasons)) {
-                    $migrated++;
+                if (is_array($seasons)) {
+                    foreach ($seasons as $season => $freqs) {
+                        foreach ($freqs as $freq => $price) {
+                            if (floatval($price) > 0) {
+                                $migrated++;
+                                break 2;
+                            }
+                        }
+                    }
                 }
             }
             
             echo '<p>';
             if ($migration_done) {
-                echo '✅ <strong>Migrácia bola vykonaná</strong><br>';
+                echo '✅ <strong>Migrácia (v2) bola vykonaná</strong><br>';
             } else {
                 echo '❌ <strong>Migrácia sa ešte nespustila</strong><br>';
             }
