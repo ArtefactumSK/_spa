@@ -257,11 +257,12 @@ function spa_group_meta_box($post) {
  *   "jul_sep": { "1x": 50.00, "2x": 70.00, "3x": 90.00 }
  * }
  */
+
 /* ============================================================
    META BOX: CENNÍK PROGRAMU (SEZÓNNE CENY - NOVÝ FORMÁT)
    ============================================================ */
 
-function spa_group_pricing_meta_box($post) {function spa_group_pricing_meta_box($post) {
+function spa_group_pricing_meta_box($post) {
     wp_nonce_field('spa_save_group_pricing', 'spa_group_pricing_nonce');
     
     // NOVÝ FORMÁT: Sezónne ceny
@@ -281,11 +282,11 @@ function spa_group_pricing_meta_box($post) {function spa_group_pricing_meta_box(
     $price_external = get_post_meta($post->ID, 'spa_price_external_addon', true);
     
     $seasons = [
-            'sep_dec' => '🍂 September - December (09-12)',
-            'jan_mar' => '❄️ Január - Marec (01-03)',
-            'apr_jun' => '🌱 Apríl - Jún (04-06)',
-            'jul_aug' => '☀️ Júl - August (07-08) - Letné prázdniny'
-        ];
+        'sep_dec' => '🍂 September - December (09-12)',
+        'jan_mar' => '❄️ Január - Marec (01-03)',
+        'apr_jun' => '🌱 Apríl - Jún (04-06)',
+        'jul_aug' => '☀️ Júl - August (07-08) - Letné prázdniny'
+    ];
     
     $frequencies = ['1x' => '1x týždenne', '2x' => '2x týždenne', '3x' => '3x týždenne'];
     
@@ -314,7 +315,7 @@ function spa_group_pricing_meta_box($post) {function spa_group_pricing_meta_box(
         <p>💡 <strong>Ako to funguje:</strong><br>
         Nastav cenu (€/týždeň) pre každú sezónu a frekvenciu. 
         Napríklad:<br>
-        • Oktober-December, 1x týždenne = 60€<br>
+        • September-December, 1x týždenne = 60€<br>
         • Január-Marec, 1x týždenne = 66€
         </p>
     </div>
@@ -383,6 +384,62 @@ function spa_group_pricing_meta_box($post) {function spa_group_pricing_meta_box(
     </div>
     
     <?php
+}
+
+/* ============================================================
+   SAVE: Uloženie cien
+   ============================================================ */
+
+add_action('save_post_spa_group', 'spa_group_pricing_save', 10, 2);
+
+function spa_group_pricing_save($post_id, $post) {
+    if ($post->post_type !== 'spa_group') {
+        return;
+    }
+    
+    if (!isset($_POST['spa_group_pricing_nonce']) || !wp_verify_nonce($_POST['spa_group_pricing_nonce'], 'spa_save_group_pricing')) {
+        return;
+    }
+    
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+    
+    // SEZÓNNE CENY (NOVÝ FORMÁT)
+    if (isset($_POST['spa_pricing_seasons']) && is_array($_POST['spa_pricing_seasons'])) {
+        $pricing_seasons = [];
+        
+        foreach ($_POST['spa_pricing_seasons'] as $season => $frequencies) {
+            $season = sanitize_key($season);
+            $pricing_seasons[$season] = [];
+            
+            if (is_array($frequencies)) {
+                foreach ($frequencies as $freq => $price) {
+                    $freq = sanitize_key($freq);
+                    $pricing_seasons[$season][$freq] = floatval($price);
+                }
+            }
+        }
+        
+        update_post_meta($post_id, 'spa_pricing_seasons', $pricing_seasons);
+    }
+    
+    // LEGACY POLIA (KOMPATIBILITA)
+    if (isset($_POST['spa_price_monthly'])) {
+        update_post_meta($post_id, 'spa_price_monthly', floatval($_POST['spa_price_monthly']));
+    }
+    
+    if (isset($_POST['spa_price_semester'])) {
+        update_post_meta($post_id, 'spa_price_semester', floatval($_POST['spa_price_semester']));
+    }
+    
+    if (isset($_POST['spa_price_external_addon'])) {
+        update_post_meta($post_id, 'spa_price_external_addon', floatval($_POST['spa_price_external_addon']));
+    }
 }
 
 /* ============================================================
