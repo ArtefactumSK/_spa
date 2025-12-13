@@ -1,14 +1,12 @@
 <?php
 /**
- * SPA Taxonomies
+ * SPA Taxonomies - OPRAVENÉ
  * 
  * @package Samuel Piasecký ACADEMY
- * @version 1.0.0
-
- * SPA Taxonomies - DEPRECATED
- * Taxonómia 'spa_place' je zastaralá - používame teraz CPT 'spa_place'
- * Ponecháme pre spätnú kompatibilitu so starými programami
- * NOVÉ MIESTA: Pridávaj cez CPT 'spa_place' (admin → Miesta)
+ * @version 1.0.1-FIXED
+ * 
+ * FIXES:
+ * - Pridané 'show_in_quick_edit' => true pre správne zobrazenie v admin paneli
  */
 
 if (!defined('ABSPATH')) {
@@ -24,7 +22,7 @@ add_action('init', 'spa_register_taxonomy_places');
 function spa_register_taxonomy_places() {
     
     $labels = [
-        'name' => 'Miesta',
+        'name' => '📍 Miesta (Značka)',
         'singular_name' => 'Miesto',
         'search_items' => 'Hľadať miesta',
         'all_items' => 'Všetky miesta',
@@ -39,6 +37,7 @@ function spa_register_taxonomy_places() {
         'labels' => $labels,
         'public' => false,
         'show_ui' => true,
+        'show_in_quick_edit' => true,      // ← FIX: Zobrazí v admin paneli!
         'hierarchical' => false,
         'show_admin_column' => true,
         'show_in_rest' => false,
@@ -55,8 +54,8 @@ add_action('init', 'spa_register_taxonomy_categories');
 function spa_register_taxonomy_categories() {
     
     $labels = [
-        'name' => 'Kategórie skupín',
-        'singular_name' => 'Kategória skupín',
+        'name' => '🎯 Kategórie',
+        'singular_name' => 'Kategória',
         'search_items' => 'Hľadať kategórie',
         'all_items' => 'Všetky kategórie',
         'parent_item' => 'Nadradená kategória',
@@ -65,14 +64,15 @@ function spa_register_taxonomy_categories() {
         'update_item' => 'Aktualizovať kategóriu',
         'add_new_item' => 'Pridať kategóriu',
         'new_item_name' => 'Nová kategória',
-        'menu_name' => 'Kategórie skupín'
+        'menu_name' => 'Kategórie'
     ];
 
     register_taxonomy('spa_group_category', 'spa_group', [
         'labels' => $labels,
         'hierarchical' => true,
-        'show_admin_column' => true,
         'show_ui' => true,
+        'show_in_quick_edit' => true,      // ← FIX: Zobrazí v admin paneli!
+        'show_admin_column' => true,
         'public' => false,
         'show_in_rest' => false,
         'rewrite' => ['slug' => 'skupiny-kategorie']

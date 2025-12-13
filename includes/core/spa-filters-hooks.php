@@ -299,3 +299,4 @@ function spa_log($message, $data = null) {
     
     error_log($log);
 }
+
