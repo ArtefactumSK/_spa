@@ -13,7 +13,7 @@
  * - SPA_VERSION
  * - SPA_PATH
  * - SPA_URL
- * - SPA_INCLUDES
+ * - SPA_INCLUDES (ak ešte nie je definovaná)
  * 
  * FUNCTIONS DEFINED: žiadne
  * 
@@ -24,14 +24,28 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('SPA_VERSION', '26.1.0');
-define('SPA_PATH', get_stylesheet_directory());
-define('SPA_URL', get_stylesheet_directory_uri());
-define('SPA_INCLUDES', SPA_PATH . '/includes/');
+// === KONŠTANTY ===
+if (!defined('SPA_VERSION')) {
+    define('SPA_VERSION', '26.1.0');
+}
 
-// Artefactum support
-if (defined('ARTEFACTUM_COMMON')) {
-    define('ARTEFACTUM_ACTIVE', true);
-} else {
-    define('ARTEFACTUM_ACTIVE', false);
+if (!defined('SPA_PATH')) {
+    define('SPA_PATH', get_stylesheet_directory());
+}
+
+if (!defined('SPA_URL')) {
+    define('SPA_URL', get_stylesheet_directory_uri());
+}
+
+if (!defined('SPA_INCLUDES')) {
+    define('SPA_INCLUDES', SPA_PATH . '/includes/');
+}
+
+// === ARTEFACTUM SUPPORT ===
+if (!defined('ARTEFACTUM_ACTIVE')) {
+    if (defined('ARTEFACTUM_COMMON')) {
+        define('ARTEFACTUM_ACTIVE', true);
+    } else {
+        define('ARTEFACTUM_ACTIVE', false);
+    }
 }

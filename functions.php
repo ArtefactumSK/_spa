@@ -45,6 +45,7 @@ function spa_enqueue_styles() {
     wp_enqueue_script('jquery');
 }
 
+
 function spa_enqueue_admin_styles() {
     // Admin CSS - Shared - Hardcoded paths
     $spa_url = get_stylesheet_directory_uri();
@@ -100,65 +101,148 @@ add_action('admin_init', function() {
 /* ==========================
    NAČÍTANIE MODULOV
    ========================== */
+   /* ==========================
+   ZÁKLADNÉ KONŠTANTY (AK NEEXISTUJÚ)
+   ========================== */
 
-$spa_modules = [
-    // === CORE - ZÁKLADNÉ FUNKCIE ===
-    'core/spa-constants.php',         // Konštanty
-    'core/spa-roles.php',             // Role a capabilities
-    'core/spa-filters-hooks.php',     // Globálne filtre, bezpečnosť, hooks
-    
-    // === CPT - CUSTOM POST TYPES ===
-    'cpt/spa-cpt-groups.php',         // Programy
-    'cpt/spa-cpt-registration.php',   // Registrácie
-    'cpt/spa-cpt-place.php',          // Miesta
-    'cpt/spa-cpt-event.php',          // Udalosti
-    'cpt/spa-cpt-attendance.php',     // Dochádzka
-    
-    // === TAXONOMIES ===
-    'helpers/spa-taxonomies.php',     // Taxonómie
-    
-    // === USER MANAGEMENT ===
-    'user/spa-user-fields.php',       // User meta polia
-    'user/spa-user-parents.php',      // Funkcie pre rodičov
-    'user/spa-user-children.php',     // Funkcie pre deti
-    'user/spa-user-clients.php',      // Funkcie pre klientov
-    
-    // === REGISTRATION ===
-    'registration/spa-registration-helpers.php',      // Helper funkcie
-    'registration/spa-registration-notifications.php', // Notifikácie
-    'registration/spa-registration-form.php',         // GF hooky
-    
-    // === IMPORT ===
-    'import/spa-import-helpers.php',     // Helper funkcie
-    'import/spa-import-children.php',    // Import detí
-    'import/spa-import-adults.php',      // Import dospelých
-    'import/spa-import-processor.php',   // Spracovanie
-    'import/spa-import-ui.php',          // Admin UI
-    
-    // === LOGIN ===
-    'login/spa-login.php',           // Email+heslo login
-    'login/spa-login-popup.php',     // Login popup
-    
-    // === ADMIN ===
-    'admin/spa-admin-columns.php',   // Admin columns
-    'admin/spa-meta-boxes.php',      // Meta boxy
-    
-    // === FRONTEND ===
-    'frontend/spa-shortcodes.php',   // Shortcodes
-    'frontend/spa-widgets.php',      // Widgety
-    'frontend/spa-calendar.php',     // Kalendár
-    'frontend/spa-trainer.php',      // Tréner
+if (!defined('SPA_VERSION')) {
+    define('SPA_VERSION', '26.1.0');
+}
+
+if (!defined('SPA_PATH')) {
+    define('SPA_PATH', get_stylesheet_directory());
+}
+
+if (!defined('SPA_URL')) {
+    define('SPA_URL', get_stylesheet_directory_uri());
+}
+
+if (!defined('SPA_INCLUDES')) {
+    define('SPA_INCLUDES', SPA_PATH . '/includes/');
+}
+
+/* ==========================
+   NAČÍTANIE MODULOV - POSTUPNE
+   ========================== */
+
+// FÁZA 1: CORE - Povinné pri štarte
+$spa_core_modules = [
+    // 'core/spa-constants.php',      // Konštanty (override)
+    // 'core/spa-roles.php',          // Role a capabilities
+    // 'core/spa-filters-hooks.php',  // Globálne filtre a bezpečnosť
 ];
 
-foreach ($spa_modules as $module) {
+foreach ($spa_core_modules as $module) {
     $file = SPA_INCLUDES . $module;
     if (file_exists($file)) {
         require_once $file;
     } else {
-        // Debug: v budúcnosti skontroluj chýbajúce súbory
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[SPA] Missing module: ' . $file);
+            error_log('[SPA CORE] Missing: ' . $file);
         }
+    }
+}
+
+// FÁZA 2: CPT a TAXONOMIES - Po CORE
+$spa_cpt_modules = [
+    'cpt/spa-cpt-groups.php',
+    'cpt/spa-cpt-registration.php',
+    'cpt/spa-cpt-place.php',
+    'cpt/spa-cpt-event.php',
+    'cpt/spa-cpt-attendance.php',
+    'helpers/spa-taxonomies.php',
+];
+
+foreach ($spa_cpt_modules as $module) {
+    $file = SPA_INCLUDES . $module;
+    if (file_exists($file)) {
+        require_once $file;
+    }
+}
+
+// FÁZA 3: USER - Po CPT
+$spa_user_modules = [
+    'user/spa-user-fields.php',
+    'user/spa-user-parents.php',
+    'user/spa-user-children.php',
+    'user/spa-user-clients.php',
+];
+
+foreach ($spa_user_modules as $module) {
+    $file = SPA_INCLUDES . $module;
+    if (file_exists($file)) {
+        require_once $file;
+    }
+}
+
+// FÁZA 4: REGISTRATION - Po USER
+$spa_registration_modules = [
+    'registration/spa-registration-helpers.php',
+    'registration/spa-registration-notifications.php',
+    'registration/spa-registration-form.php',
+];
+
+foreach ($spa_registration_modules as $module) {
+    $file = SPA_INCLUDES . $module;
+    if (file_exists($file)) {
+        require_once $file;
+    }
+}
+
+// FÁZA 5: IMPORT - Po REGISTRATION
+$spa_import_modules = [
+    'import/spa-import-helpers.php',
+    'import/spa-import-children.php',
+    'import/spa-import-adults.php',
+    'import/spa-import-processor.php',
+    'import/spa-import-ui.php',
+];
+
+foreach ($spa_import_modules as $module) {
+    $file = SPA_INCLUDES . $module;
+    if (file_exists($file)) {
+        require_once $file;
+    }
+}
+
+// FÁZA 6: LOGIN - Po IMPORT
+$spa_login_modules = [
+    'login/spa-login.php',
+    'login/spa-login-popup.php',
+];
+
+foreach ($spa_login_modules as $module) {
+    $file = SPA_INCLUDES . $module;
+    if (file_exists($file)) {
+        require_once $file;
+    }
+}
+
+// FÁZA 7: ADMIN - Po LOGIN
+$spa_admin_modules = [
+    'admin/spa-admin-columns.php',
+    'admin/spa-meta-boxes.php',
+];
+
+foreach ($spa_admin_modules as $module) {
+    $file = SPA_INCLUDES . $module;
+    if (file_exists($file)) {
+        require_once $file;
+    }
+}
+
+// FÁZA 8: FRONTEND - Posledné
+$spa_frontend_modules = [
+    'frontend/spa-shortcodes.php',
+    'frontend/spa-widgets.php',
+    'frontend/spa-calendar.php',
+    'frontend/spa-trainer.php',
+];
+
+foreach ($spa_frontend_modules as $module) {
+    $file = SPA_INCLUDES . $module;
+    if (file_exists($file)) {
+        require_once $file;
     }
 }
 
