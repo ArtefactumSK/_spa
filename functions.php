@@ -25,7 +25,7 @@ add_action( 'admin_init', 'remove_gravity_forms_nag' );
 /* ==========================
    NAČÍTANIE ŠTÝLOV A CSS
    ========================== */
-/*
+
 add_action('wp_enqueue_scripts', 'spa_enqueue_styles', 5);
 add_action('admin_enqueue_scripts', 'spa_enqueue_admin_styles', 5);
 
@@ -33,29 +33,30 @@ function spa_enqueue_styles() {
     // Parent theme
     wp_enqueue_style('parent-style', get_template_directory_uri() . '/style.css');
     
-    // Child theme - Hardcoded version, SPA_VERSION ešte neexistuje
-    wp_enqueue_style('child-style', get_stylesheet_directory_uri() . '/style.css', ['parent-style'], '26.1.0');
+    // Child theme
+    wp_enqueue_style('child-style', get_stylesheet_directory_uri() . '/style.css', ['parent-style'], SPA_VERSION);
     
-    // SPA CSS - Shared - Hardcoded paths
-    $spa_url = get_stylesheet_directory_uri();
-    wp_enqueue_style('spa-variables', $spa_url . '/assets/css/variables.css', [], '26.1.0');
-    wp_enqueue_style('spa-notices', $spa_url . '/assets/css/admin/admin-notices.css', ['spa-variables'], '26.1.0');
+    // SPA Shared CSS
+    wp_enqueue_style('spa-variables', SPA_URL . '/assets/css/variables.css', [], SPA_VERSION);
+    wp_enqueue_style('spa-notices', SPA_URL . '/assets/css/admin/admin-notices.css', ['spa-variables'], SPA_VERSION);
+    
+    // Frontend-specific CSS (po potrebe)
+    // wp_enqueue_style('spa-frontend', SPA_URL . '/assets/css/frontend/frontend.css', ['spa-variables'], SPA_VERSION);
     
     // jQuery (potrebné pre AJAX)
     wp_enqueue_script('jquery');
 }
 
-
 function spa_enqueue_admin_styles() {
-    // Admin CSS - Shared - Hardcoded paths
-    $spa_url = get_stylesheet_directory_uri();
-    wp_enqueue_style('spa-variables', $spa_url . '/assets/css/variables.css', [], '26.1.0');
+    // Admin CSS
+    wp_enqueue_style('spa-variables', SPA_URL . '/assets/css/variables.css', [], SPA_VERSION);
+    wp_enqueue_style('spa-admin-core', SPA_URL . '/assets/css/admin/admin-core.css', ['spa-variables'], SPA_VERSION);
+    wp_enqueue_style('spa-admin-notices', SPA_URL . '/assets/css/admin/admin-notices.css', ['spa-variables'], SPA_VERSION);
     
-    // Admin CSS - Core
-    wp_enqueue_style('spa-admin-core', $spa_url . '/assets/css/admin/admin-core.css', ['spa-variables'], '26.1.0');
-    wp_enqueue_style('spa-admin-notices', $spa_url . '/assets/css/admin/admin-notices.css', ['spa-variables'], '26.1.0');
+    // Admin-specific CSS (po potrebe)
+    // wp_enqueue_style('spa-admin-import', SPA_URL . '/assets/css/admin/admin-import.css', ['spa-variables'], SPA_VERSION);
+    // wp_enqueue_style('spa-admin-columns', SPA_URL . '/assets/css/admin/admin-columns.css', ['spa-variables'], SPA_VERSION);
 }
-*/
 
 /* ==========================
    ARTEFACTUM SUPPORT
@@ -146,13 +147,12 @@ foreach ($spa_core_modules as $module) {
 
 // FÁZA 2: CPT a TAXONOMIES - Po CORE (AK EXISTUJÚ)
 $spa_cpt_modules = [
-    // Zatiaľ všetko zakomentované - CPT moduly ešte neexistujú
-    // 'cpt/spa-cpt-groups.php',
-    // 'cpt/spa-cpt-registration.php',
-    // 'cpt/spa-cpt-place.php',
-    // 'cpt/spa-cpt-event.php',
-    // 'cpt/spa-cpt-attendance.php',
-    // 'helpers/spa-taxonomies.php',
+     'cpt/spa-cpt-groups.php',
+     'cpt/spa-cpt-registration.php',
+     'cpt/spa-cpt-place.php',
+     'cpt/spa-cpt-event.php',
+     'cpt/spa-cpt-attendance.php',
+     'helpers/spa-taxonomies.php',
 ];
 
 foreach ($spa_cpt_modules as $module) {
@@ -164,10 +164,10 @@ foreach ($spa_cpt_modules as $module) {
 
 // FÁZA 3: USER - Po CPT
 $spa_user_modules = [
-    // 'user/spa-user-fields.php',
-    // 'user/spa-user-parents.php',
-    // 'user/spa-user-children.php',
-    // 'user/spa-user-clients.php',
+    'user/spa-user-fields.php',
+    'user/spa-user-parents.php',
+    'user/spa-user-children.php',
+    'user/spa-user-clients.php',
 ];
 
 foreach ($spa_user_modules as $module) {
@@ -179,9 +179,9 @@ foreach ($spa_user_modules as $module) {
 
 // FÁZA 4: REGISTRATION - Po USER
 $spa_registration_modules = [
-    // 'registration/spa-registration-helpers.php',
-    // 'registration/spa-registration-notifications.php',
-    // 'registration/spa-registration-form.php',
+    'registration/spa-registration-helpers.php',
+    'registration/spa-registration-notifications.php',
+    'registration/spa-registration-form.php',
 ];
 
 foreach ($spa_registration_modules as $module) {
@@ -193,11 +193,11 @@ foreach ($spa_registration_modules as $module) {
 
 // FÁZA 5: IMPORT - Po REGISTRATION
 $spa_import_modules = [
-    // 'import/spa-import-helpers.php',
-    // 'import/spa-import-children.php',
-    // 'import/spa-import-adults.php',
-    // 'import/spa-import-processor.php',
-    // 'import/spa-import-ui.php',
+    'import/spa-import-helpers.php',
+    'import/spa-import-children.php',
+    'import/spa-import-adults.php',
+    'import/spa-import-processor.php',
+    'import/spa-import-ui.php',
 ];
 
 foreach ($spa_import_modules as $module) {
@@ -209,8 +209,8 @@ foreach ($spa_import_modules as $module) {
 
 // FÁZA 6: LOGIN - Po IMPORT
 $spa_login_modules = [
-    // 'login/spa-login.php',
-    // 'login/spa-login-popup.php',
+    'login/spa-login.php',
+    'login/spa-login-popup.php',
 ];
 
 foreach ($spa_login_modules as $module) {
@@ -222,8 +222,8 @@ foreach ($spa_login_modules as $module) {
 
 // FÁZA 7: ADMIN - Po LOGIN
 $spa_admin_modules = [
-    // 'admin/spa-admin-columns.php',
-    // 'admin/spa-meta-boxes.php',
+    'admin/spa-admin-columns.php',
+    'admin/spa-meta-boxes.php',
 ];
 
 foreach ($spa_admin_modules as $module) {
@@ -235,10 +235,10 @@ foreach ($spa_admin_modules as $module) {
 
 // FÁZA 8: FRONTEND - Posledné
 $spa_frontend_modules = [
-    // 'frontend/spa-shortcodes.php',
-    // 'frontend/spa-widgets.php',
-    // 'frontend/spa-calendar.php',
-    // 'frontend/spa-trainer.php',
+    'frontend/spa-shortcodes.php',
+    'frontend/spa-widgets.php',
+    'frontend/spa-calendar.php',
+    'frontend/spa-trainer.php',
 ];
 
 foreach ($spa_frontend_modules as $module) {
@@ -251,6 +251,7 @@ foreach ($spa_frontend_modules as $module) {
 /* ==========================
    DEBUG MODE (vývojové)
    ========================== */
+   /*
 
 if (defined('WP_DEBUG') && WP_DEBUG && current_user_can('administrator')) {
     
@@ -263,7 +264,7 @@ if (defined('WP_DEBUG') && WP_DEBUG && current_user_can('administrator')) {
         echo '</p></div>';
     });
 }
-
+*/
 /* ==========================
    ADMIN DASHBOARD WIDGET
    ========================== */

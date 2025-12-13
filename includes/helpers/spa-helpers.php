@@ -298,7 +298,6 @@ function spa_display_notice() {
     
     $icon = $icons[$notice['type']] ?? 'ℹ️';
     
-    // CSS je teraz v assets/css/admin/admin-notices.css
     return sprintf(
         '<div class="spa-notice spa-notice-%s">
             <span>%s</span>
@@ -309,6 +308,7 @@ function spa_display_notice() {
         esc_html($notice['message'])
     );
 }
+
 
 /* ==========================
    ČASOVÉ FUNKCIE
