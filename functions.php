@@ -143,7 +143,7 @@ spa_load_module('import/spa-import-csv-v2.php');
 /* ==========================
    KRITICKÉ ADMIN MODULY (Musí byť aktívne!)
    ========================== */
-spa_load_module('spa-meta-boxes.php');     // ← KRITICKÉ! (Program meta fieldy)
+spa_load_module('spa-meta-boxes.php');      // ← Zakomentuj starý
 spa_load_module('spa-admin-columns.php');   // ← KRITICKÉ! (Admin columns)
 
 /* ==========================
