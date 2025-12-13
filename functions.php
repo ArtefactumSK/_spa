@@ -176,7 +176,7 @@ foreach ($spa_user_modules as $module) {
         require_once $file;
     }
 }
-
+/*
 // FÁZA 4: REGISTRATION - Po USER
 $spa_registration_modules = [
     'registration/spa-registration-helpers.php',
@@ -247,7 +247,7 @@ foreach ($spa_frontend_modules as $module) {
         require_once $file;
     }
 }
-
+*/
 /* ==========================
    DEBUG MODE (vývojové)
    ========================== */
