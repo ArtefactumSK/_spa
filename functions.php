@@ -125,7 +125,7 @@ if (!defined('SPA_INCLUDES')) {
 /* ==========================
    NAČÍTANIE MODULOV - POSTUPNE
    ========================== */
-/*
+
 // FÁZA 1: CORE - Povinné pri štarte
 $spa_core_modules = [
      'core/spa-constants.php',      // Konštanty (override)
@@ -146,6 +146,7 @@ foreach ($spa_core_modules as $module) {
 
 // FÁZA 2: CPT a TAXONOMIES - Po CORE (AK EXISTUJÚ)
 $spa_cpt_modules = [
+    // Zatiaľ všetko zakomentované - CPT moduly ešte neexistujú
     // 'cpt/spa-cpt-groups.php',
     // 'cpt/spa-cpt-registration.php',
     // 'cpt/spa-cpt-place.php',
@@ -163,10 +164,10 @@ foreach ($spa_cpt_modules as $module) {
 
 // FÁZA 3: USER - Po CPT
 $spa_user_modules = [
-    'user/spa-user-fields.php',
-    'user/spa-user-parents.php',
-    'user/spa-user-children.php',
-    'user/spa-user-clients.php',
+    // 'user/spa-user-fields.php',
+    // 'user/spa-user-parents.php',
+    // 'user/spa-user-children.php',
+    // 'user/spa-user-clients.php',
 ];
 
 foreach ($spa_user_modules as $module) {
@@ -178,9 +179,9 @@ foreach ($spa_user_modules as $module) {
 
 // FÁZA 4: REGISTRATION - Po USER
 $spa_registration_modules = [
-    'registration/spa-registration-helpers.php',
-    'registration/spa-registration-notifications.php',
-    'registration/spa-registration-form.php',
+    // 'registration/spa-registration-helpers.php',
+    // 'registration/spa-registration-notifications.php',
+    // 'registration/spa-registration-form.php',
 ];
 
 foreach ($spa_registration_modules as $module) {
@@ -192,11 +193,11 @@ foreach ($spa_registration_modules as $module) {
 
 // FÁZA 5: IMPORT - Po REGISTRATION
 $spa_import_modules = [
-    'import/spa-import-helpers.php',
-    'import/spa-import-children.php',
-    'import/spa-import-adults.php',
-    'import/spa-import-processor.php',
-    'import/spa-import-ui.php',
+    // 'import/spa-import-helpers.php',
+    // 'import/spa-import-children.php',
+    // 'import/spa-import-adults.php',
+    // 'import/spa-import-processor.php',
+    // 'import/spa-import-ui.php',
 ];
 
 foreach ($spa_import_modules as $module) {
@@ -208,8 +209,8 @@ foreach ($spa_import_modules as $module) {
 
 // FÁZA 6: LOGIN - Po IMPORT
 $spa_login_modules = [
-    'login/spa-login.php',
-    'login/spa-login-popup.php',
+    // 'login/spa-login.php',
+    // 'login/spa-login-popup.php',
 ];
 
 foreach ($spa_login_modules as $module) {
@@ -221,8 +222,8 @@ foreach ($spa_login_modules as $module) {
 
 // FÁZA 7: ADMIN - Po LOGIN
 $spa_admin_modules = [
-    'admin/spa-admin-columns.php',
-    'admin/spa-meta-boxes.php',
+    // 'admin/spa-admin-columns.php',
+    // 'admin/spa-meta-boxes.php',
 ];
 
 foreach ($spa_admin_modules as $module) {
@@ -234,10 +235,10 @@ foreach ($spa_admin_modules as $module) {
 
 // FÁZA 8: FRONTEND - Posledné
 $spa_frontend_modules = [
-    'frontend/spa-shortcodes.php',
-    'frontend/spa-widgets.php',
-    'frontend/spa-calendar.php',
-    'frontend/spa-trainer.php',
+    // 'frontend/spa-shortcodes.php',
+    // 'frontend/spa-widgets.php',
+    // 'frontend/spa-calendar.php',
+    // 'frontend/spa-trainer.php',
 ];
 
 foreach ($spa_frontend_modules as $module) {
@@ -246,7 +247,7 @@ foreach ($spa_frontend_modules as $module) {
         require_once $file;
     }
 }
-*/
+
 /* ==========================
    DEBUG MODE (vývojové)
    ========================== */
