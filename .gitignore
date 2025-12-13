@@ -24,6 +24,7 @@
 *~
 *.swp
 *.tmp
+*.txt
 
 # Systém
 .DS_Store
