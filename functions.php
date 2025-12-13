@@ -113,6 +113,14 @@ spa_load_module('cpt/spa-cpt-attendance.php');
 spa_load_module('helpers/spa-taxonomies.php');
 
 /* ==========================
+   NAČÍTANIE MODULOV - FÁZA 3: USER
+   ========================== */
+spa_load_module('user/spa-user-fields.php');
+spa_load_module('user/spa-user-parents.php');
+spa_load_module('user/spa-user-children.php');
+spa_load_module('user/spa-user-clients.php');
+
+/* ==========================
    ADMIN MODULES
    ========================== */
 spa_load_module('spa-admin-columns.php');
@@ -123,7 +131,15 @@ spa_load_module('spa-calendar.php');
 spa_load_module('spa-trainer.php');
 spa_load_module('spa-login.php');
 spa_load_module('spa-login-popup.php');
-spa_load_module('spa-import.php');
+
+/* ==========================
+   IMPORT - Nová verzia v2
+   ========================== */
+// Vymaž starý import.php - načítavaj len nový
+spa_load_module('import/spa-import-csv-v2.php');
+
+// FALLBACK: Ak starý import ainda existuje (kompatibilita)
+// spa_load_module('spa-import.php'); // ← ZAKOMENTOVANÉ
 
 /* ==========================
    REGISTRÁCIA - Nové fragmentované súbory
