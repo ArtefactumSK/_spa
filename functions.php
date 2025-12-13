@@ -179,9 +179,14 @@ foreach ($spa_user_modules as $module) {
         require_once $file;
     }
 }
+// FÁZA 4: REGISTRATION - FALLBACK NA STARÉ RIEŠENIE
+$old_registration = SPA_INCLUDES . 'spa-registration.php.bak';
+if (file_exists($old_registration)) {
+    require_once $old_registration;
+}
 
 // FÁZA 4: REGISTRATION FALLBACK - Ak fragmentácia nefunguje
-$registration_file = SPA_INCLUDES . 'registration/spa-registration-helpers.php';
+/* $registration_file = SPA_INCLUDES . 'registration/spa-registration-helpers.php';
 
 if (!file_exists($registration_file)) {
     // Fallback na staré monolitné riešenie
@@ -204,7 +209,7 @@ if (!file_exists($registration_file)) {
             require_once $file;
         }
     }
-}
+} */
 
 // ========== KONIEC FALLBACK ==========
 
