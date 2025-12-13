@@ -278,6 +278,10 @@ function spa_get_notice() {
     return null;
 }
 
+/* ==========================
+   NOTIFIKÁCIE - DISPLAY
+   ========================== */
+
 function spa_display_notice() {
     $notice = spa_get_notice();
     
@@ -292,23 +296,15 @@ function spa_display_notice() {
         'info' => 'ℹ️'
     ];
     
-    $colors = [
-        'success' => '#4caf50',
-        'error' => '#f44336',
-        'warning' => '#ff9800',
-        'info' => '#2196f3'
-    ];
-    
     $icon = $icons[$notice['type']] ?? 'ℹ️';
-    $color = $colors[$notice['type']] ?? '#2196f3';
     
+    // CSS je teraz v assets/css/admin/admin-notices.css
     return sprintf(
-        '<div class="spa-notice spa-notice-%s" style="background: %s; color: white; padding: 16px; border-radius: 8px; margin: 20px 0;">
-            <span style="font-size: 20px; margin-right: 12px;">%s</span>
+        '<div class="spa-notice spa-notice-%s">
+            <span>%s</span>
             <span>%s</span>
         </div>',
         esc_attr($notice['type']),
-        esc_attr($color),
         $icon,
         esc_html($notice['message'])
     );

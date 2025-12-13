@@ -1,10 +1,39 @@
 <?php
 /**
- * SPA User Fields - Rozšírené polia používateľov
- * Rodné číslo, Variabilný symbol, PIN, Adresa
+ * SPA User Fields - Rozšírené user meta polia
  * 
- * @package Samuel Samuel Piasecký ACADEMY
- * @version 2.0.0
+ * @package Samuel Piasecký ACADEMY
+ * @subpackage User Management
+ * @version 1.0.0
+ * 
+ * PARENT MODULES:
+ * - spa-core/spa-roles.php
+ * 
+ * CHILD MODULES:
+ * - spa-user-parents.php
+ * - spa-user-children.php
+ * - spa-user-clients.php
+ * 
+ * USER META REGISTERED:
+ * - phone
+ * - birthdate
+ * - address_street
+ * - address_psc
+ * - address_city
+ * - rodne_cislo
+ * - variabilny_symbol (VS)
+ * - spa_pin
+ * - health_notes
+ * - parent_id (pre deti)
+ * 
+ * FUNCTIONS DEFINED:
+ * - spa_register_user_fields()
+ * - [všetky ostatné z originálu]
+ * 
+ * HOOKS USED:
+ * - init (register fields)
+ * - admin_head (CSS)
+ * - admin_notices (validácie)
  */
 
 if (!defined('ABSPATH')) {
