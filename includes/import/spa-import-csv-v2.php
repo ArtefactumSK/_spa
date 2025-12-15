@@ -487,7 +487,6 @@ function spa_get_season_from_date($date) {
         'processed_files' => 0
     ];
     
-    
     foreach ($files_to_process as $file_info) {
         $file_stats = spa_process_single_csv(
             $file_info['path'],
@@ -503,6 +502,9 @@ function spa_get_season_from_date($date) {
         $total_stats['skipped'] += $file_stats['skipped'];
         $total_stats['error_log'] = array_merge($total_stats['error_log'], $file_stats['error_log']);
         $total_stats['processed_files']++;
+        
+        // DEBUG: Log agregácie po každom súbore
+        error_log('AFTER PROCESSING FILE: success=' . $total_stats['success'] . ' errors=' . $total_stats['errors'] . ' skipped=' . $total_stats['skipped']);
     }
    
     // Vyčistiť dočasné súbory
@@ -514,16 +516,25 @@ function spa_get_season_from_date($date) {
     spa_save_import_log($total_stats);
 
     // === IMPORT FINISHED – REDIRECT BACK TO IMPORT PAGE ===
+    error_log('FINAL STATS: success=' . $total_stats['success'] . ' errors=' . $total_stats['errors'] . ' skipped=' . $total_stats['skipped'] . ' files=' . $total_stats['processed_files']);
+    
     wp_redirect(add_query_arg([
         'post_type' => 'spa_registration',
         'page'      => 'spa-registrations-import',
-        'import'    => 'success'
+        'import'    => 'success',
+        'imported'  => $total_stats['success'],
+        'errors'    => $total_stats['errors'],
+        'skipped'   => $total_stats['skipped'],
+        'files'     => $total_stats['processed_files']
     ], admin_url('edit.php')));
     exit;
     
 }
 
 /**
+ * Spracovanie jedného CSV súboru
+ */
+    /**
  * Spracovanie jedného CSV súboru
  */
 function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '', $target_group_id = 0) {
@@ -548,19 +559,27 @@ function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '
     // Načítanie prvého riadku (header)
     $first_line = fgets($handle);
     
+    if ($first_line === false) {
+        $import_stats['errors']++;
+        $import_stats['error_log'][] = 'Súbor je prázdny alebo nečitateľný: ' . $filename;
+        error_log('ERROR: Cannot read first line from CSV file: ' . $filename);
+        fclose($handle);
+        return $import_stats;
+    }
+    
     // Odstránenie UTF-8 BOM
     if (substr($first_line, 0, 3) === "\xEF\xBB\xBF") {
         $first_line = substr($first_line, 3);
     }
     
-    // Parsovanie hlavičky
+    // Parsovanie hlavičky - bez ďalšieho fgetcsv! (Len str_getcsv)
     $header = str_getcsv($first_line, ';', '"', '\\');
     $header = array_map('trim', $header);
     
     error_log('CSV HEADERS: ' . implode(' | ', $header));
     
-    // Spracovanie riadkov
-    $row_number = 1;
+    // Spracovanie riadkov - teraz priamo fgetcsv bez preskakovania
+    $row_number = 1; // Header je riadok 1
     
     while (($row = fgetcsv($handle, 0, ';', '"', '\\')) !== false) {
         $row_number++;
@@ -573,17 +592,25 @@ function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '
         
         error_log('ROW ' . $row_number . ': ' . implode(' | ', $row));
         
-        // Vytvorenie registrácie
+        // Vytvorenie registrácie - s error handling
         $registration_id = wp_insert_post([
             'post_type' => 'spa_registration',
             'post_title' => 'Import registrácia ' . date('Y-m-d H:i:s') . ' #' . $row_number,
             'post_status' => 'publish'
-        ]);
+        ], true); // ← true = return WP_Error ako objekt
         
-        if (is_wp_error($registration_id) || !$registration_id) {
+        if (is_wp_error($registration_id)) {
             $import_stats['errors']++;
-            $import_stats['error_log'][] = 'Chyba vytvorenia registrácie na riadku ' . $row_number;
-            error_log('ERROR: Failed to create registration for row ' . $row_number);
+            $error_msg = $registration_id->get_error_message();
+            $import_stats['error_log'][] = 'Chyba vytvorenia registrácie na riadku ' . $row_number . ': ' . $error_msg;
+            error_log('ERROR: Failed to create registration for row ' . $row_number . ' - ' . $error_msg);
+            continue;
+        }
+        
+        if (!$registration_id) {
+            $import_stats['errors']++;
+            $import_stats['error_log'][] = 'Neznáma chyba pri vytváraní registrácie na riadku ' . $row_number;
+            error_log('ERROR: Failed to create registration for row ' . $row_number . ' - Unknown error');
             continue;
         }
         
