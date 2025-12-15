@@ -384,15 +384,15 @@ function spa_process_csv_import() {
     check_admin_referer('spa_csv_import', 'spa_csv_import_nonce');
 
     // === ZÍSKANIE SKUPINY PRIAMO Z UI (ID) ===
-    $target_group_id = isset($_POST['import_group_id']) ? intval($_POST['import_group_id']) : 0;
+$target_group_id = isset($_POST['import_group_id']) ? intval($_POST['import_group_id']) : 0;
 
-    if (!$target_group_id || get_post_type($target_group_id) !== 'spa_group' || get_post_status($target_group_id) !== 'publish') {
-        wp_redirect(add_query_arg([
-            'page'  => 'spa-registrations-import',
-            'error' => 'group_not_selected_or_invalid'
-        ], admin_url('edit.php?post_type=spa_registration')));
-        exit;
-    }
+if (!$target_group_id || get_post_type($target_group_id) !== 'spa_group' || get_post_status($target_group_id) !== 'publish') {
+    wp_redirect(add_query_arg([
+        'page'  => 'spa-registrations-import',
+        'error' => 'group_not_selected_or_invalid'
+    ], admin_url('edit.php?post_type=spa_registration')));
+    exit;
+}
 
         // Kontrola nahratého súboru
     if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
