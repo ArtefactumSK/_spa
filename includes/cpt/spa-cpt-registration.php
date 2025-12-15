@@ -181,36 +181,41 @@ function spa_render_import_admin_page() {
         }
         
         // Zobrazenie chýb
-        if (isset($_GET['error'])) {
+        /* if (isset($_GET['error'])) {
             $error_msg = 'Neznáma chyba';
             switch ($_GET['error']) {
-                case 'upload_failed':
-                    $error_msg = 'Chyba pri nahrávaní súboru.';
-                    break;
-                case 'zip_extraction_failed':
-                    $error_msg = 'Nepodarilo sa rozbaliť ZIP archív.';
-                    break;
-                case 'invalid_file_type':
-                    $error_msg = 'Neplatný typ súboru. Povolené sú len CSV a ZIP.';
-                    break;
-                case 'missing_columns':
-                    $missing = isset($_GET['missing']) ? sanitize_text_field($_GET['missing']) : '';
-                    $error_msg = 'Chýbajúce stĺpce v CSV: ' . $missing;
-                    break;
-                case 'missing_schedule_params':
-                    $error_msg = 'Musíte vyplniť: Program, Mesto, Deň v týždni a Čas začiatku.';
-                    break;
-                case 'group_not_found':
-                    $params = isset($_GET['params']) ? sanitize_text_field($_GET['params']) : '';
-                    $error_msg = 'Skupina sa nenašla pre zadané parametre: ' . $params;
-                    break;
-                case 'group_not_selected_or_invalid':
-                    $error_message = 'Nie je vybraný platný tréningový termín.';
-                    break;
-    
-            }
-            echo '<div class="notice notice-error is-dismissible"><p><strong>Chyba:</strong> ' . esc_html($error_msg) . '</p></div>';
+
+            case 'group_not_found':
+                $error_message = 'Skupina sa nenašla pre zadané parametre.';
+                break;
+
+            case 'group_not_selected_or_invalid':
+                $error_message = 'Nie je vybraný platný tréningový termín.';
+                break;
+
+            default:
+                // ak príde neznámy alebo prázdny error, NEZOBRAZUJ nič
+                $error_message = '';
+                break;
         }
+
+            echo '<div class="notice notice-error is-dismissible"><p><strong>Chyba:</strong> ' . esc_html($error_msg) . '</p></div>';
+        } */
+
+            if (!empty($_GET['error'])) {
+                switch ($_GET['error']) {
+
+                    case 'group_not_selected_or_invalid':
+                        $error_message = 'Nie je vybraný tréningový termín.';
+                        break;
+
+                    default:
+                        // nezobrazuj žiadnu hlášku
+                        $error_message = '';
+                        break;
+                }
+            }
+
         ?>
         
         <div class="card" style="max-width: 800px;">
