@@ -1,376 +1,685 @@
 <?php
 /**
- * SPA Import CSV v2 - Nová štruktúra
- * 
- * @package Samuel Piasecký ACADEMY
- * @subpackage Import
- * @version 2.0.0
- * 
- * PARENT MODULES: 
- * - user/spa-user-parents.php
- * - user/spa-user-children.php
- * - user/spa-user-clients.php
- * - registration/spa-registration-helpers.php
- * 
- * CIEĽ:
- * - Import CSV (children + parents)
- * - Vytvorenie user accounts
- * - Vytvorenie spa_registration CPT s vazbou na spa_group
- * - Uloženie meta polí (VS, PIN, health_notes, atď.)
+ * CSV Import Handler v2 - ENHANCED
+ * - Podpora ZIP archívov s viacerými CSV
+ * - Import ceny z CSV
+ * - Metadata pre export tracking
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-/* ==================================================
-   ADMIN PAGE: Import CSV
-   ================================================== */
-
-add_action('admin_menu', 'spa_import_csv_v2_menu');
-
-function spa_import_csv_v2_menu() {
-    add_submenu_page(
-        'edit.php?post_type=spa_registration',
-        'CSV Import v2',
-        '📥 CSV Import',
-        'manage_options',
-        'spa-import-csv-v2',
-        'spa_import_csv_v2_page'
+/**
+ * Rozbalenie ZIP archívu
+ * 
+ * @param string $zip_path Cesta k ZIP súboru
+ * @return array ['success' => bool, 'files' => array, 'error' => string]
+ */
+function spa_extract_zip_archive($zip_path) {
+    $zip = new ZipArchive();
+    $extract_path = wp_upload_dir()['basedir'] . '/spa-temp-import-' . time();
+    
+    if ($zip->open($zip_path) !== true) {
+        return ['success' => false, 'error' => 'Nepodarilo sa otvoriť ZIP'];
+    }
+    
+    // Vytvoriť dočasný adresár
+    wp_mkdir_p($extract_path);
+    
+    // Rozbaľovanie
+    $zip->extractTo($extract_path);
+    $zip->close();
+    
+    // Nájsť všetky CSV súbory
+    $csv_files = [];
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($extract_path)
     );
-}
-
-/* ==================================================
-   ADMIN PAGE: Render
-   ================================================== */
-
-function spa_import_csv_v2_page() {
-    ?>
-    <div class="wrap">
-        <h1>📥 CSV Import - Nová štruktúra (v2)</h1>
-        
-        <div class="notice notice-info">
-            <p>
-                <strong>Postup:</strong><br>
-                1. Uploadni CSV súbor<br>
-                2. Vyber mapovací program (Program_ID)<br>
-                3. Skontroluj náhľad<br>
-                4. Potvrď import
-            </p>
-        </div>
-        
-        <form method="post" enctype="multipart/form-data">
-            <?php wp_nonce_field('spa_import_csv_nonce'); ?>
+    
+    foreach ($iterator as $file) {
+        if ($file->isFile() && $file->getExtension() === 'csv') {
+            $relative_path = str_replace($extract_path . '/', '', $file->getPathname());
+            $city_folder = dirname($relative_path);
             
-            <table class="form-table">
-                <tr>
-                    <th>
-                        <label for="csv_file">CSV Súbor:</label>
-                    </th>
-                    <td>
-                        <input type="file" name="csv_file" id="csv_file" 
-                               accept=".csv" required>
-                        <p class="description">
-                            Očakávané stĺpce: Meno;Priezvisko;Email;Tel.;...;Email(rodič);Meno(rodič);Priezvisko(rodič);...
-                        </p>
-                    </td>
-                </tr>
-                
-                <tr>
-                    <th>
-                        <label for="program_id">Program (spa_group ID):</label>
-                    </th>
-                    <td>
-                        <select name="program_id" id="program_id" required>
-                            <option value="">-- Vyber program --</option>
-                            <?php
-                            $programs = get_posts([
-                                'post_type' => 'spa_group',
-                                'posts_per_page' => -1,
-                                'orderby' => 'title',
-                                'order' => 'ASC'
-                            ]);
-                            
-                            foreach ($programs as $prog) {
-                                printf(
-                                    '<option value="%d">%s (ID: %d)</option>',
-                                    $prog->ID,
-                                    esc_html($prog->post_title),
-                                    $prog->ID
-                                );
-                            }
-                            ?>
-                        </select>
-                    </td>
-                </tr>
-                
-                <tr>
-                    <th></th>
-                    <td>
-                        <button type="submit" name="spa_import_preview" 
-                                class="button button-primary">
-                            👁️ Náhľad
-                        </button>
-                        <button type="submit" name="spa_import_process" 
-                                class="button button-secondary" 
-                                style="margin-left: 10px;">
-                            ✅ Importovať
-                        </button>
-                    </td>
-                </tr>
-            </table>
-        </form>
-        
-        <?php
-        // PREVIEW ALEBO PROCESS
-        if (isset($_POST['spa_import_preview']) || isset($_POST['spa_import_process'])) {
-            spa_import_csv_v2_handle($_POST);
-        }
-        ?>
-    </div>
-    <?php
-}
-
-/* ==================================================
-   HANDLER: Process CSV
-   ================================================== */
-
-function spa_import_csv_v2_handle($post_data) {
-    // Validácia nonce
-    if (!isset($post_data['_wpnonce']) || !wp_verify_nonce($post_data['_wpnonce'], 'spa_import_csv_nonce')) {
-        wp_die('Security check failed');
-    }
-    
-    // File upload
-    if (empty($_FILES['csv_file']['tmp_name'])) {
-        echo '<div class="notice notice-error"><p>❌ Súbor nebol uploadnutý.</p></div>';
-        return;
-    }
-    
-    $csv_file = $_FILES['csv_file']['tmp_name'];
-    $program_id = intval($post_data['program_id']);
-    
-    if (!$program_id) {
-        echo '<div class="notice notice-error"><p>❌ Vyber program.</p></div>';
-        return;
-    }
-    
-    // Parse CSV
-    $rows = spa_parse_csv_file($csv_file);
-    
-    if (empty($rows)) {
-        echo '<div class="notice notice-error"><p>❌ CSV súbor je prázdny alebo chybný.</p></div>';
-        return;
-    }
-    
-    // PREVIEW mode
-    if (isset($post_data['spa_import_preview'])) {
-        spa_import_csv_preview($rows, $program_id);
-        return;
-    }
-    
-    // PROCESS mode
-    if (isset($post_data['spa_import_process'])) {
-        spa_import_csv_process($rows, $program_id);
-    }
-}
-
-/* ==================================================
-   PARSER: CSV → Array
-   ================================================== */
-
-function spa_parse_csv_file($file_path) {
-    $rows = [];
-    
-    if (($handle = fopen($file_path, 'r')) !== false) {
-        // Skip header
-        fgetcsv($handle, 0, ';');
-        
-        while (($data = fgetcsv($handle, 0, ';')) !== false) {
-            if (count($data) < 5) continue; // Skip invalid rows
+            // Ak je súbor priamo v root ZIP → mesto = prázdne
+            if ($city_folder === '.') {
+                $city_folder = '';
+            }
             
-            $rows[] = [
-                'child_first' => trim($data[0] ?? ''),
-                'child_last' => trim($data[1] ?? ''),
-                'child_email' => trim($data[2] ?? ''),
-                'child_phone' => trim($data[3] ?? ''),
-                'child_birthdate' => trim($data[4] ?? ''),
-                'child_rodne_cislo' => trim($data[5] ?? ''),
-                'vs' => trim($data[8] ?? ''), // Variabilný symbol
-                'parent_email' => trim($data[30] ?? ''),
-                'parent_first' => trim($data[31] ?? ''),
-                'parent_last' => trim($data[32] ?? ''),
-                'parent_phone' => trim($data[33] ?? ''),
-                'parent_street' => trim($data[35] ?? ''),
-                'parent_psc' => trim($data[36] ?? ''),
-                'parent_city' => trim($data[37] ?? ''),
+            $csv_files[] = [
+                'path' => $file->getPathname(),
+                'filename' => $file->getFilename(),
+                'city' => $city_folder
             ];
         }
-        fclose($handle);
     }
     
-    return $rows;
+    return [
+        'success' => true,
+        'files' => $csv_files,
+        'extract_path' => $extract_path
+    ];
 }
 
-/* ==================================================
-   PREVIEW: Náhľad
-   ================================================== */
-
-function spa_import_csv_preview($rows, $program_id) {
-    $program = get_post($program_id);
-    
-    echo '<div class="notice notice-info" style="margin-top: 20px;">';
-    echo '<h2>👁️ Náhľad importu</h2>';
-    echo '<p><strong>Program:</strong> ' . esc_html($program->post_title) . ' (ID: ' . $program_id . ')</p>';
-    echo '<p><strong>Počet riadkov:</strong> ' . count($rows) . '</p>';
-    echo '<table class="wp-list-table fixed striped">';
-    echo '<thead><tr>';
-    echo '<th>Dieťa (Meno)</th><th>Rodič (Email)</th><th>VS</th><th>Stav</th>';
-    echo '</tr></thead>';
-    echo '<tbody>';
-    
-    foreach (array_slice($rows, 0, 5) as $row) {
-        $status = 'OK';
-        if (empty($row['child_first']) || empty($row['parent_email'])) {
-            $status = '❌ Chýbajúce údaje';
-        }
-        
-        echo '<tr>';
-        echo '<td>' . esc_html($row['child_first'] . ' ' . $row['child_last']) . '</td>';
-        echo '<td>' . esc_html($row['parent_email']) . '</td>';
-        echo '<td>' . esc_html($row['vs']) . '</td>';
-        echo '<td>' . $status . '</td>';
-        echo '</tr>';
+/**
+ * Vyčistenie dočasných súborov
+ */
+function spa_cleanup_temp_files($path) {
+    if (!file_exists($path)) {
+        return;
     }
     
-    if (count($rows) > 5) {
-        echo '<tr><td colspan="4" style="text-align: center;"><em>...a ďalších ' . (count($rows) - 5) . ' riadkov</em></td></tr>';
+    $files = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST
+    );
+    
+    foreach ($files as $fileinfo) {
+        $todo = ($fileinfo->isDir() ? 'rmdir' : 'unlink');
+        $todo($fileinfo->getRealPath());
     }
     
-    echo '</tbody>';
-    echo '</table>';
-    echo '</div>';
+    rmdir($path);
 }
 
-/* ==================================================
-   PROCESS: Import
-   ================================================== */
-
-function spa_import_csv_process($rows, $program_id) {
-    $imported = 0;
-    $failed = 0;
-    $errors = [];
+/**
+ * Vyhľadať skupinu podľa názvu (post_title)
+ * 
+ * @param string $group_name Názov skupiny
+ * @return int|false Group ID alebo false
+ */
+function spa_find_group_by_name($group_name) {
+    $normalized_name = trim(strtolower($group_name));
     
-    foreach ($rows as $idx => $row) {
-        // Validácia
-        if (empty($row['child_first']) || empty($row['parent_email'])) {
-            $failed++;
-            $errors[] = "Riadok " . ($idx + 2) . ": Chýbajúce kritické údaje";
-            continue;
-        }
-        
-        // 1. Get or Create Parent
-        $parent_id = spa_get_or_create_parent(
-            $row['parent_email'],
-            $row['parent_first'],
-            $row['parent_last'],
-            $row['parent_phone'],
-            $row['parent_street'],
-            $row['parent_psc'],
-            $row['parent_city'],
-            '', // vs parent
-            ''  // pin parent
-        );
-        
-        if (!$parent_id) {
-            $failed++;
-            $errors[] = "Riadok " . ($idx + 2) . ": Chyba vytvárania rodiča";
-            continue;
-        }
-        
-        // 2. Create Child Account
-        $child_id = spa_create_child_account(
-            $row['child_first'],
-            $row['child_last'],
-            $row['child_birthdate'],
-            $parent_id,
-            '', // health notes
-            $row['child_rodne_cislo']
-        );
-        
-        if (!$child_id) {
-            $failed++;
-            $errors[] = "Riadok " . ($idx + 2) . ": Chyba vytvárania dieťaťa";
-            continue;
-        }
-        
-        // 3. Create Registration
-        $registration_id = spa_create_registration(
-            $child_id,
-            $program_id,
-            $parent_id,
-            0 // gravity forms entry ID (žiaden)
-        );
-        
-        if (!$registration_id) {
-            $failed++;
-            $errors[] = "Riadok " . ($idx + 2) . ": Chyba vytvárania registrácie";
-            continue;
-        }
-        
-        // 4. Save VS
-        if (!empty($row['vs'])) {
-            update_user_meta($parent_id, SPA_META_VS, sanitize_text_field($row['vs']));
-        }
-        
-        $imported++;
-    }
-    
-    // Report
-    echo '<div class="notice notice-success" style="margin-top: 20px;">';
-    echo '<h2>✅ Import hotový</h2>';
-    echo '<p><strong>Importované:</strong> ' . $imported . '</p>';
-    echo '<p><strong>Neúspešne:</strong> ' . $failed . '</p>';
-    
-    if (!empty($errors)) {
-        echo '<h3>Chyby:</h3>';
-        echo '<ul style="list-style: disc; margin-left: 20px;">';
-        foreach ($errors as $error) {
-            echo '<li>' . esc_html($error) . '</li>';
-        }
-        echo '</ul>';
-    }
-    
-    echo '</div>';
-}
-
-/* ==================================================
-   HELPER: Create Registration CPT
-   ================================================== */
-
-function spa_create_registration($child_id, $program_id, $parent_id, $gf_entry_id) {
-    $child = get_user_by('id', $child_id);
-    $program = get_post($program_id);
-    
-    $title = $child->display_name . ' - ' . $program->post_title;
-    
-    $registration = wp_insert_post([
-        'post_type' => 'spa_registration',
-        'post_title' => $title,
+    $query = new WP_Query([
+        'post_type' => 'sp_skupina',
         'post_status' => 'publish',
-        'post_author' => $child_id
+        'posts_per_page' => -1,
+        'fields' => 'ids'
     ]);
-    
-    if (is_wp_error($registration)) {
+
+    if (!$query->have_posts()) {
         return false;
     }
+
+    // Hľadať exact match (case-insensitive)
+    foreach ($query->posts as $group_id) {
+        $group_title = get_the_title($group_id);
+        $normalized_title = trim(strtolower($group_title));
+        
+        if ($normalized_title === $normalized_name) {
+            return $group_id;
+        }
+    }
+
+    // Ak exact match nenájdený, skúsiť partial match
+    foreach ($query->posts as $group_id) {
+        $group_title = get_the_title($group_id);
+        $normalized_title = trim(strtolower($group_title));
+        
+        if (strpos($normalized_title, $normalized_name) !== false) {
+            return $group_id;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Nájsť alebo vytvoriť dieťa z CSV údajov
+ */
+function spa_find_or_create_child_from_csv($row_data) {
+    $meno = sanitize_text_field($row_data['meno']);
+    $priezvisko = sanitize_text_field($row_data['priezvisko']);
+    $datum_narodenia = sanitize_text_field($row_data['datum_narodenia']);
+
+    // Hľadať existujúce dieťa
+    $existing_child = new WP_Query([
+        'post_type' => 'sp_dieta',
+        'post_status' => 'publish',
+        'meta_query' => [
+            'relation' => 'AND',
+            [
+                'key' => 'krstne_meno',
+                'value' => $meno,
+                'compare' => '='
+            ],
+            [
+                'key' => 'priezvisko',
+                'value' => $priezvisko,
+                'compare' => '='
+            ],
+            [
+                'key' => 'datum_narodenia',
+                'value' => $datum_narodenia,
+                'compare' => '='
+            ]
+        ],
+        'posts_per_page' => 1
+    ]);
+
+    if ($existing_child->have_posts()) {
+        return $existing_child->posts[0]->ID;
+    }
+
+    // Vytvoriť nové dieťa
+    $child_id = wp_insert_post([
+        'post_type' => 'sp_dieta',
+        'post_title' => $meno . ' ' . $priezvisko,
+        'post_status' => 'publish'
+    ]);
+
+    if (is_wp_error($child_id)) {
+        return false;
+    }
+
+    // Uložiť ACF polia
+    update_field('krstne_meno', $meno, $child_id);
+    update_field('priezvisko', $priezvisko, $child_id);
+    update_field('pohlavie', sanitize_text_field($row_data['pohlavie']), $child_id);
+    update_field('datum_narodenia', $datum_narodenia, $child_id);
+
+    return $child_id;
+}
+
+/**
+ * Nájsť alebo vytvoriť rodiča z CSV údajov
+ */
+function spa_find_or_create_parent_from_csv($row_data) {
+    $email = sanitize_email($row_data['email']);
+
+    // Hľadať existujúceho rodiča podľa emailu
+    $existing_parent = new WP_Query([
+        'post_type' => 'sp_rodic',
+        'post_status' => 'publish',
+        'meta_query' => [
+            [
+                'key' => 'email',
+                'value' => $email,
+                'compare' => '='
+            ]
+        ],
+        'posts_per_page' => 1
+    ]);
+
+    if ($existing_parent->have_posts()) {
+        return $existing_parent->posts[0]->ID;
+    }
+
+    // Vytvoriť nového rodiča
+    $meno_rodica = sanitize_text_field($row_data['meno_rodica']);
+    $priezvisko_rodica = sanitize_text_field($row_data['priezvisko_rodica']);
+
+    $parent_id = wp_insert_post([
+        'post_type' => 'sp_rodic',
+        'post_title' => $meno_rodica . ' ' . $priezvisko_rodica,
+        'post_status' => 'publish'
+    ]);
+
+    if (is_wp_error($parent_id)) {
+        return false;
+    }
+
+    // Uložiť ACF polia
+    update_field('krstne_meno', $meno_rodica, $parent_id);
+    update_field('priezvisko', $priezvisko_rodica, $parent_id);
+    update_field('email', $email, $parent_id);
+    update_field('telefon', sanitize_text_field($row_data['telefon']), $parent_id);
+
+    return $parent_id;
+}
+
+/**
+ * Prepojiť rodiča a dieťa (obojsmerne)
+ */
+function spa_link_parent_child($parent_id, $child_id) {
+    // Pridať dieťa k rodičovi
+    $parent_children = get_field('deti', $parent_id) ?: [];
+    if (!in_array($child_id, $parent_children)) {
+        $parent_children[] = $child_id;
+        update_field('deti', $parent_children, $parent_id);
+    }
+
+    // Pridať rodiča k dieťaťu
+    $child_parents = get_field('rodicia', $child_id) ?: [];
+    if (!in_array($parent_id, $child_parents)) {
+        $child_parents[] = $parent_id;
+        update_field('rodicia', $child_parents, $child_id);
+    }
+}
+
+/**
+ * Validácia formátu dátumu DD.MM.YYYY
+ */
+function spa_validate_date_format($date_string) {
+    if (empty($date_string)) {
+        return false;
+    }
+
+    $date = DateTime::createFromFormat('d.m.Y', $date_string);
+    return $date && $date->format('d.m.Y') === $date_string;
+}
+
+/**
+ * Uložiť import log
+ */
+function spa_save_import_log($stats) {
+    $log_dir = wp_upload_dir()['basedir'] . '/spa-import-logs';
     
-    // Meta
-    update_post_meta($registration, 'spa_child_id', $child_id);
-    update_post_meta($registration, 'spa_program_id', $program_id);
-    update_post_meta($registration, 'spa_parent_id', $parent_id);
-    update_post_meta($registration, 'spa_status', 'active');
-    update_post_meta($registration, 'spa_gf_entry_id', $gf_entry_id);
+    if (!file_exists($log_dir)) {
+        wp_mkdir_p($log_dir);
+    }
+
+    $log_file = $log_dir . '/import-' . date('Y-m-d-His') . '.log';
     
-    return $registration;
+    $log_content = sprintf(
+        "=== SPA CSV IMPORT LOG ===\n" .
+        "Dátum: %s\n" .
+        "Spracovaných súborov: %d\n" .
+        "Úspešných registrácií: %d\n" .
+        "Chýb: %d\n" .
+        "Preskočených: %d\n\n" .
+        "=== DETAILY ===\n%s\n",
+        current_time('mysql'),
+        $stats['processed_files'] ?? 1,
+        $stats['success'],
+        $stats['errors'],
+        $stats['skipped'],
+        implode("\n", $stats['error_log'])
+    );
+
+    file_put_contents($log_file, $log_content);
+}
+
+/**
+ * Spracovanie CSV importu - HLAVNÝ ENTRY POINT
+ * Podporuje CSV aj ZIP archívy
+ */
+function spa_process_csv_import() {
+    // Bezpečnostná kontrola
+    if (!current_user_can('manage_options')) {
+        wp_die('Nemáte oprávnenie na túto akciu.');
+    }
+
+    check_admin_referer('spa_csv_import', 'spa_csv_import_nonce');
+
+    // Kontrola nahratého súboru
+    if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+        wp_redirect(add_query_arg([
+            'page' => 'spa-import',
+            'error' => 'upload_failed'
+        ], admin_url('admin.php')));
+        exit;
+    }
+
+    $uploaded_file = $_FILES['csv_file']['tmp_name'];
+    $uploaded_filename = $_FILES['csv_file']['name'];
+    $file_extension = strtolower(pathinfo($uploaded_filename, PATHINFO_EXTENSION));
+    
+    $files_to_process = [];
+    $zip_name = '';
+    $temp_path = '';
+    
+    // === DETEKCIA TYPU SÚBORU ===
+    
+    if ($file_extension === 'zip') {
+        // ZIP ARCHÍV
+        $zip_result = spa_extract_zip_archive($uploaded_file);
+        
+        if (!$zip_result['success']) {
+            wp_redirect(add_query_arg([
+                'page' => 'spa-import',
+                'error' => 'zip_extraction_failed'
+            ], admin_url('admin.php')));
+            exit;
+        }
+        
+        $files_to_process = $zip_result['files'];
+        $temp_path = $zip_result['extract_path'];
+        $zip_name = pathinfo($uploaded_filename, PATHINFO_FILENAME);
+        
+    } elseif ($file_extension === 'csv') {
+        // JEDNODUCHÝ CSV - spätná kompatibilita
+        $files_to_process[] = [
+            'path' => $uploaded_file,
+            'filename' => $uploaded_filename,
+            'city' => ''
+        ];
+    } else {
+        wp_redirect(add_query_arg([
+            'page' => 'spa-import',
+            'error' => 'invalid_file_type'
+        ], admin_url('admin.php')));
+        exit;
+    }
+    
+    // === SPRACOVANIE VŠETKÝCH CSV SÚBOROV ===
+    
+    $total_stats = [
+        'success' => 0,
+        'errors' => 0,
+        'skipped' => 0,
+        'error_log' => [],
+        'processed_files' => 0
+    ];
+    
+    foreach ($files_to_process as $file_info) {
+        $file_stats = spa_process_single_csv(
+            $file_info['path'],
+            $file_info['filename'],
+            $file_info['city'],
+            $zip_name
+        );
+        
+        // Agregácia štatistík
+        $total_stats['success'] += $file_stats['success'];
+        $total_stats['errors'] += $file_stats['errors'];
+        $total_stats['skipped'] += $file_stats['skipped'];
+        $total_stats['error_log'] = array_merge($total_stats['error_log'], $file_stats['error_log']);
+        $total_stats['processed_files']++;
+    }
+    
+    // Vyčistiť dočasné súbory
+    if (!empty($temp_path)) {
+        spa_cleanup_temp_files($temp_path);
+    }
+    
+    // Uložiť log
+    spa_save_import_log($total_stats);
+
+    // Redirect s výsledkami
+    wp_redirect(add_query_arg([
+        'page' => 'spa-import',
+        'import' => 'success',
+        'imported' => $total_stats['success'],
+        'errors' => $total_stats['errors'],
+        'skipped' => $total_stats['skipped'],
+        'files' => $total_stats['processed_files']
+    ], admin_url('admin.php')));
+    exit;
+}
+add_action('admin_post_spa_import_csv', 'spa_process_csv_import');
+
+/**
+ * Spracovanie jedného CSV súboru
+ * 
+ * @param string $file_path Cesta k CSV
+ * @param string $filename Názov súboru
+ * @param string $city Názov mesta/adresára
+ * @param string $zip_name Názov ZIP archívu (ak existuje)
+ * @return array Štatistiky importu
+ */
+function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '') {
+    
+    $fallback_group_name = pathinfo($filename, PATHINFO_FILENAME);
+    $fallback_group_name = sanitize_text_field($fallback_group_name);
+    
+    // Inicializácia štatistík
+    $import_stats = [
+        'success' => 0,
+        'errors' => 0,
+        'skipped' => 0,
+        'error_log' => []
+    ];
+    
+    // Pridať info o súbore do logu
+    $import_stats['error_log'][] = sprintf(
+        '=== Spracovanie: %s%s ===',
+        !empty($city) ? $city . '/' : '',
+        $filename
+    );
+
+    // Otvorenie CSV súboru
+    if (($handle = fopen($file_path, 'r')) === false) {
+        $import_stats['errors']++;
+        $import_stats['error_log'][] = 'Chyba otvorenia súboru: ' . $filename;
+        return $import_stats;
+    }
+
+    // Načítanie hlavičky
+    $header = fgetcsv($handle, 0, ',');
+    
+    if ($header === false) {
+        fclose($handle);
+        $import_stats['errors']++;
+        $import_stats['error_log'][] = 'Prázdny súbor: ' . $filename;
+        return $import_stats;
+    }
+
+    // Normalizácia hlavičky
+    $header = array_map('trim', $header);
+    $header = array_map('strtolower', $header);
+
+    // Validácia povinných stĺpcov
+    $required_columns = [
+        'meno',
+        'priezvisko',
+        'pohlavie',
+        'datum_narodenia',
+        'meno_rodica',
+        'priezvisko_rodica',
+        'email',
+        'telefon'
+    ];
+
+    $missing_columns = array_diff($required_columns, $header);
+    
+    if (!empty($missing_columns)) {
+        fclose($handle);
+        $import_stats['errors']++;
+        $import_stats['error_log'][] = sprintf(
+            'Chýbajúce stĺpce v %s: %s',
+            $filename,
+            implode(', ', $missing_columns)
+        );
+        return $import_stats;
+    }
+    
+    // Kontrola prítomnosti voliteľných stĺpcov
+    $has_price_column = in_array('predvolena_suma', $header);
+
+    // Spracovanie riadkov
+    $row_number = 1;
+    
+    while (($row = fgetcsv($handle, 0, ',')) !== false) {
+        $row_number++;
+
+        // Preskočiť prázdne riadky
+        if (empty(array_filter($row))) {
+            $import_stats['skipped']++;
+            continue;
+        }
+
+        // Kombinovať hlavičku s hodnotami
+        $row_data = array_combine($header, $row);
+
+        // Validácia dátumov
+        if (!spa_validate_date_format($row_data['datum_narodenia'])) {
+            $import_stats['errors']++;
+            $import_stats['error_log'][] = sprintf(
+                '[%s - Riadok %d] Neplatný dátum narodenia: %s',
+                $filename,
+                $row_number,
+                $row_data['datum_narodenia']
+            );
+            continue;
+        }
+
+        // Kontrola roku narodenia
+        $birth_year = DateTime::createFromFormat('d.m.Y', $row_data['datum_narodenia'])->format('Y');
+        if ($birth_year < 1900 || $birth_year > 2020) {
+            $import_stats['errors']++;
+            $import_stats['error_log'][] = sprintf(
+                '[%s - Riadok %d] Rok narodenia mimo rozsah (1900-2020): %s',
+                $filename,
+                $row_number,
+                $birth_year
+            );
+            continue;
+        }
+
+        // === 1. DIEŤA ===
+        $child_id = spa_find_or_create_child_from_csv($row_data);
+        
+        if (!$child_id) {
+            $import_stats['errors']++;
+            $import_stats['error_log'][] = sprintf(
+                '[%s - Riadok %d] Chyba vytvorenia dieťaťa: %s %s',
+                $filename,
+                $row_number,
+                $row_data['meno'],
+                $row_data['priezvisko']
+            );
+            continue;
+        }
+
+        // === 2. RODIČ ===
+        $parent_id = spa_find_or_create_parent_from_csv($row_data);
+        
+        if (!$parent_id) {
+            $import_stats['errors']++;
+            $import_stats['error_log'][] = sprintf(
+                '[%s - Riadok %d] Chyba vytvorenia rodiča: %s',
+                $filename,
+                $row_number,
+                $row_data['email']
+            );
+            continue;
+        }
+
+        // === 3. PREPOJENIE RODIČ ↔ DIEŤA ===
+        spa_link_parent_child($parent_id, $child_id);
+
+        // === 4. AUTOMATICKÉ URČENIE SKUPINY ===
+        
+        $csv_group_name = isset($row_data['skupiny']) && !empty($row_data['skupiny']) 
+            ? sanitize_text_field($row_data['skupiny']) 
+            : '';
+        
+        $group_search_name = !empty($csv_group_name) ? $csv_group_name : $fallback_group_name;
+
+        if (empty($group_search_name)) {
+            $import_stats['errors']++;
+            $import_stats['error_log'][] = sprintf(
+                '[%s - Riadok %d] Chýba názov skupiny v CSV aj v názve súboru',
+                $filename,
+                $row_number
+            );
+            continue;
+        }
+
+        $group_id = spa_find_group_by_name($group_search_name);
+
+        if (!$group_id) {
+            $import_stats['errors']++;
+            $import_stats['error_log'][] = sprintf(
+                '[%s - Riadok %d] Skupina "%s" sa nenašla v systéme',
+                $filename,
+                $row_number,
+                $group_search_name
+            );
+            continue;
+        }
+
+        // === 5. KONTROLA DUPLICITY ===
+        
+        $existing_registration = new WP_Query([
+            'post_type' => 'spa_registration',
+            'post_status' => 'publish',
+            'meta_query' => [
+                'relation' => 'AND',
+                [
+                    'key' => 'child_id',
+                    'value' => $child_id,
+                    'compare' => '='
+                ],
+                [
+                    'key' => 'group_id',
+                    'value' => $group_id,
+                    'compare' => '='
+                ],
+                [
+                    'key' => 'registration_status',
+                    'value' => 'active',
+                    'compare' => '='
+                ]
+            ],
+            'posts_per_page' => 1
+        ]);
+
+        if ($existing_registration->have_posts()) {
+            $import_stats['skipped']++;
+            $import_stats['error_log'][] = sprintf(
+                '[%s - Riadok %d] Registrácia už existuje (cena sa nemenila): %s %s v skupine %s',
+                $filename,
+                $row_number,
+                $row_data['meno'],
+                $row_data['priezvisko'],
+                $group_search_name
+            );
+            continue;
+        }
+
+        // === 6. ZÍSKAŤ CENU Z CSV ===
+        
+        $csv_price = null;
+        if ($has_price_column && isset($row_data['predvolena_suma']) && !empty($row_data['predvolena_suma'])) {
+            $price_string = str_replace(',', '.', $row_data['predvolena_suma']);
+            $csv_price = floatval($price_string);
+        }
+
+        // === 7. VYTVORENIE REGISTRÁCIE ===
+        
+        $child_name = get_the_title($child_id);
+        $group_name = get_the_title($group_id);
+
+        $registration_id = wp_insert_post([
+            'post_type'   => 'spa_registration',
+            'post_title'  => sprintf('Registrácia %s - %s', $child_name, $group_name),
+            'post_status' => 'publish',
+        ]);
+
+        if (is_wp_error($registration_id)) {
+            $import_stats['errors']++;
+            $import_stats['error_log'][] = sprintf(
+                '[%s - Riadok %d] Chyba vytvorenia registrácie: %s',
+                $filename,
+                $row_number,
+                $registration_id->get_error_message()
+            );
+            continue;
+        }
+
+        // === 8. ULOŽENIE META POLÍ ===
+        
+        // Základné prepojenia
+        update_post_meta($registration_id, 'child_id', $child_id);
+        update_post_meta($registration_id, 'parent_id', $parent_id);
+        update_post_meta($registration_id, 'group_id', $group_id);
+        update_post_meta($registration_id, 'registration_date', current_time('mysql'));
+        update_post_meta($registration_id, 'registration_status', 'active');
+
+        // Import metadata (pre export tracking)
+        if (!empty($city)) {
+            update_post_meta($registration_id, 'import_city', sanitize_text_field($city));
+        }
+        update_post_meta($registration_id, 'import_csv_filename', sanitize_file_name($filename));
+        if (!empty($zip_name)) {
+            update_post_meta($registration_id, 'import_zip_name', sanitize_file_name($zip_name));
+        }
+        update_post_meta($registration_id, 'import_timestamp', current_time('mysql'));
+
+        // Cena z CSV (len ak bola zadaná)
+        if ($csv_price !== null && $csv_price > 0) {
+            update_post_meta($registration_id, 'registration_price', $csv_price);
+            update_post_meta($registration_id, 'price_source', 'csv_import');
+        }
+
+        $import_stats['success']++;
+    }
+
+    fclose($handle);
+    
+    return $import_stats;
 }
