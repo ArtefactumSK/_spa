@@ -489,70 +489,21 @@ function spa_get_season_from_date($date) {
     
     
     foreach ($files_to_process as $file_info) {
-            $csv_path = $file_info['path'];
-            $csv_filename = $file_info['filename'];
-            
-            // Otvorenie CSV súboru
-            $handle = fopen($csv_path, 'r');
-            // odstránenie BOM (UTF-8)
-            $firstLine = fgets($handle);
-            $firstLine = preg_replace('/^\xEF\xBB\xBF/', '', $firstLine);
-            $headers = str_getcsv($firstLine, ';');
-
-            
-            if ($handle === false) {
-                $total_stats['errors']++;
-                continue;
-            }
-            
-            // Preskočiť hlavičku (prvý riadok)
-            fgetcsv($handle, 0, ';');
-            
-            // Spracovanie riadkov
-            while (($row = fgetcsv($handle, 0, ';')) !== false) {
-                error_log('CSV ROW: ' . print_r($row, true));
-
-                $post_id = wp_insert_post([
-                    'post_type'   => 'spa_registration',
-                    'post_status' => 'publish',
-                    'post_title'  => trim($row[0] . ' ' . $row[1]),
-                ]);
-
-                if (!is_wp_error($post_id)) {
-                    add_post_meta($post_id, 'spa_group_id', $target_group_id);
-                    $total_stats['success']++;
-                } else {
-                    $total_stats['errors']++;
-                }
-
-                // Preskočiť prázdne riadky
-               /*  if (empty(array_filter($row))) {
-                    continue;
-                }
-                
-                // Vytvorenie registrácie
-                $registration_id = wp_insert_post([
-                    'post_type' => 'spa_registration',
-                    'post_title' => 'Import registrácia ' . date('Y-m-d H:i:s'),
-                    'post_status' => 'publish'
-                ]);
-                
-                if (is_wp_error($registration_id) || !$registration_id) {
-                    $total_stats['errors']++;
-                    continue;
-                }
-                
-                // Uloženie meta polí
-                update_post_meta($registration_id, 'spa_group_id', $target_group_id);
-                update_post_meta($registration_id, 'import_source', 'csv');
-                update_post_meta($registration_id, 'import_filename', $csv_filename);
-                
-                $total_stats['success']++; */
-            }
-            
-            fclose($handle);
-            $total_stats['processed_files']++;
-        }
+        $file_stats = spa_process_single_csv(
+            $file_info['path'],
+            $file_info['filename'],
+            $file_info['city'],
+            $zip_name,
+            $target_group_id
+        );
+        
+        // Agregácia štatistík
+        $total_stats['success'] += $file_stats['success'];
+        $total_stats['errors'] += $file_stats['errors'];
+        $total_stats['skipped'] += $file_stats['skipped'];
+        $total_stats['error_log'] = array_merge($total_stats['error_log'], $file_stats['error_log']);
+        $total_stats['processed_files']++;
+    }
    
     // Vyčistiť dočasné súbory
     if (!empty($temp_path)) {
