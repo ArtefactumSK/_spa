@@ -529,6 +529,11 @@ function spa_get_season_from_date($date) {
         'import'    => 'success'
     ], admin_url('edit.php')));
     exit;
+    // === FORCE REDIRECT AFTER IMPORT (CRITICAL) ===
+    wp_safe_redirect(
+        admin_url('edit.php?post_type=spa_registration&page=spa-registrations-import&import=success')
+    );
+    exit;
 }
 add_action('admin_post_spa_import_csv', 'spa_process_csv_import');
 
