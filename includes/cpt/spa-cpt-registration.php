@@ -235,15 +235,21 @@ function spa_render_import_admin_page() {
                                     'orderby' => 'title',
                                     'order' => 'ASC'
                                 ]);
-                                foreach ($programs as $program) {
-                                    printf(
-                                        '<option value="%d">%s</option>',
-                                        $program->ID,
-                                        esc_html($program->post_title)
-                                    );
+                                
+                                if (!empty($programs)) {
+                                    foreach ($programs as $program) {
+                                        printf(
+                                            '<option value="%d">%s</option>',
+                                            $program->ID,
+                                            esc_html($program->post_title)
+                                        );
+                                    }
+                                } else {
+                                    echo '<option value="" disabled>Žiadne programy nenájdené</option>';
                                 }
                                 ?>
                             </select>
+                            <p class="description">Vyberte tréningový program (nezávisle od miesta)</p>
                         </td>
                     </tr>
                     
