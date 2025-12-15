@@ -488,19 +488,6 @@ function spa_get_season_from_date($date) {
     ];
     
     foreach ($files_to_process as $file_info) {
-        $file_stats = spa_process_single_csv(
-            $file_info['path'],
-            $file_info['filename'],
-            $file_info['city'],
-            $zip_name,
-            $target_group_id
-        );
-        
-        // Agregácia štatistík
-        $total_stats['success'] += $file_stats['success'];
-        $total_stats['errors'] += $file_stats['errors'];
-        $total_stats['skipped'] += $file_stats['skipped'];
-        $total_stats['error_log'] = array_merge($total_stats['error_log'], $file_stats['error_log']);
         $total_stats['processed_files']++;
     }
     
@@ -512,16 +499,6 @@ function spa_get_season_from_date($date) {
     // Uložiť log
     spa_save_import_log($total_stats);
 
-    // Redirect s výsledkami
-    wp_redirect(add_query_arg([
-        'page' => 'spa-import',
-        'import' => 'success',
-        'imported' => $total_stats['success'],
-        'errors' => $total_stats['errors'],
-        'skipped' => $total_stats['skipped'],
-        'files' => $total_stats['processed_files']
-    ], admin_url('admin.php')));
-    exit;
     // === IMPORT FINISHED – REDIRECT BACK TO IMPORT PAGE ===
     wp_redirect(add_query_arg([
         'post_type' => 'spa_registration',
@@ -532,3 +509,4 @@ function spa_get_season_from_date($date) {
     
 }
 add_action('admin_post_spa_import_csv', 'spa_process_csv_import');
+
