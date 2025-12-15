@@ -204,6 +204,10 @@ function spa_render_import_admin_page() {
                     $params = isset($_GET['params']) ? sanitize_text_field($_GET['params']) : '';
                     $error_msg = 'Skupina sa nenašla pre zadané parametre: ' . $params;
                     break;
+                case 'group_not_selected_or_invalid':
+                    $error_message = 'Nie je vybraný platný tréningový termín.';
+                    break;
+    
             }
             echo '<div class="notice notice-error is-dismissible"><p><strong>Chyba:</strong> ' . esc_html($error_msg) . '</p></div>';
         }
