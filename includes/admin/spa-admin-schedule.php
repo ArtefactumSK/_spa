@@ -134,3 +134,131 @@ function spa_group_schedule_save($post_id, $post) {
     }
     update_post_meta($post_id, 'spa_schedule_times', $schedule_times);
 }
+
+/**
+ * ============================================================================
+ * CSV IMPORT - DOČASNÝ ADMIN NÁSTROJ
+ * Tento blok kódu možno v budúcnosti odstrániť
+ * ============================================================================
+ */
+
+/**
+ * Registrácia admin stránky pre CSV import
+ */
+function spa_register_import_admin_page() {
+    add_submenu_page(
+        'edit.php?post_type=spa_registration',  // Parent menu (Registrácie)
+        'Import registrácií (CSV)',              // Page title
+        'Import',                                // Menu label
+        'manage_options',                        // Capability
+        'spa-registrations-import',              // Slug
+        'spa_render_import_admin_page'           // Callback
+    );
+}
+add_action('admin_menu', 'spa_register_import_admin_page');
+
+/**
+ * Render admin stránky pre CSV import
+ */
+function spa_render_import_admin_page() {
+    ?>
+    <div class="wrap">
+        <h1>Import registrácií (CSV/ZIP)</h1>
+        
+        <?php
+        // Zobrazenie výsledkov importu
+        if (isset($_GET['import']) && $_GET['import'] === 'success') {
+            $imported = isset($_GET['imported']) ? intval($_GET['imported']) : 0;
+            $errors = isset($_GET['errors']) ? intval($_GET['errors']) : 0;
+            $skipped = isset($_GET['skipped']) ? intval($_GET['skipped']) : 0;
+            $files = isset($_GET['files']) ? intval($_GET['files']) : 1;
+            
+            echo '<div class="notice notice-success is-dismissible"><p>';
+            echo '<strong>Import dokončený!</strong><br>';
+            echo sprintf('Spracovaných súborov: %d<br>', $files);
+            echo sprintf('Úspešne importované: %d<br>', $imported);
+            echo sprintf('Chyby: %d<br>', $errors);
+            echo sprintf('Preskočené: %d', $skipped);
+            echo '</p></div>';
+        }
+        
+        // Zobrazenie chýb
+        if (isset($_GET['error'])) {
+            $error_msg = 'Neznáma chyba';
+            switch ($_GET['error']) {
+                case 'upload_failed':
+                    $error_msg = 'Chyba pri nahrávaní súboru.';
+                    break;
+                case 'zip_extraction_failed':
+                    $error_msg = 'Nepodarilo sa rozbaliť ZIP archív.';
+                    break;
+                case 'invalid_file_type':
+                    $error_msg = 'Neplatný typ súboru. Povolené sú len CSV a ZIP.';
+                    break;
+                case 'missing_columns':
+                    $missing = isset($_GET['missing']) ? sanitize_text_field($_GET['missing']) : '';
+                    $error_msg = 'Chýbajúce stĺpce v CSV: ' . $missing;
+                    break;
+            }
+            echo '<div class="notice notice-error is-dismissible"><p><strong>Chyba:</strong> ' . esc_html($error_msg) . '</p></div>';
+        }
+        ?>
+        
+        <div class="card" style="max-width: 600px;">
+            <h2>Nahrať CSV alebo ZIP súbor</h2>
+            
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
+                <?php wp_nonce_field('spa_csv_import', 'spa_csv_import_nonce'); ?>
+                <input type="hidden" name="action" value="spa_import_csv">
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">
+                            <label for="csv_file">Súbor</label>
+                        </th>
+                        <td>
+                            <input type="file" name="csv_file" id="csv_file" accept=".csv,.zip" required>
+                            <p class="description">
+                                Povolené formáty: CSV, ZIP<br>
+                                ZIP môže obsahovať viacero CSV súborov v adresároch (napr. Malacky/, Košice/)
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <p class="submit">
+                    <input type="submit" name="submit" id="submit" class="button button-primary" value="Importovať">
+                </p>
+            </form>
+            
+            <hr>
+            
+            <h3>Formát CSV súboru</h3>
+            <p>Povinné stĺpce:</p>
+            <ul>
+                <li><code>meno</code> – meno dieťaťa</li>
+                <li><code>priezvisko</code> – priezvisko dieťaťa</li>
+                <li><code>pohlavie</code> – M/F</li>
+                <li><code>datum_narodenia</code> – DD.MM.YYYY</li>
+                <li><code>meno_rodica</code></li>
+                <li><code>priezvisko_rodica</code></li>
+                <li><code>email</code> – email rodiča</li>
+                <li><code>telefon</code> – telefón rodiča</li>
+            </ul>
+            
+            <p>Voliteľné stĺpce:</p>
+            <ul>
+                <li><code>skupiny</code> – názov tréningovej skupiny (ak nie je zadaný, použije sa názov CSV súboru)</li>
+                <li><code>predvolena_suma</code> – cena registrácie (napr. 25.50 alebo 25,50)</li>
+            </ul>
+            
+            <p><strong>Poznámka:</strong> Ak registrácia už existuje (to isté dieťa v tej istej skupine), nebude sa duplicitne vytvárať a cena sa nezmení.</p>
+        </div>
+        
+        <div class="card" style="max-width: 600px; margin-top: 20px;">
+            <h3>Import logy</h3>
+            <p>Logy sa ukladajú do: <code><?php echo esc_html(wp_upload_dir()['basedir'] . '/spa-import-logs/'); ?></code></p>
+        </div>
+    </div>
+    <?php
+}
