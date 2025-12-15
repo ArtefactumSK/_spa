@@ -93,7 +93,7 @@ function spa_find_group_by_name($group_name) {
     $normalized_name = trim(strtolower($group_name));
     
     $query = new WP_Query([
-        'post_type' => 'sp_skupina',
+        'post_type' => 'spa_group',
         'post_status' => 'publish',
         'posts_per_page' => -1,
         'fields' => 'ids'
