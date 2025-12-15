@@ -76,12 +76,15 @@ function spa_register_cpt_registrations() {
    ================================================== */
 
 add_action('admin_menu', 'spa_fix_registration_submenu', 999);
-
+/* ==================================================
+   ADMIN INIT: 
+   ================================================== */
 function spa_fix_registration_submenu() {
     global $submenu;
     
     if (isset($submenu['edit.php?post_type=spa_registration'])) {
         foreach ($submenu['edit.php?post_type=spa_registration'] as $key => $item) {
+            // Odstrániť len "post-new.php", zachovať custom submenu (napr. import)
             if (isset($item[2]) && strpos($item[2], 'post-new.php') !== false) {
                 unset($submenu['edit.php?post_type=spa_registration'][$key]);
             }
