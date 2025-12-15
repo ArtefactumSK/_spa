@@ -11,6 +11,20 @@ if (!defined('ABSPATH')) {
 }
 
 /**
+ * Normalizácia textu pre porovnanie
+ * - odstráni diakritiku
+ * - trim medzier
+ * - lowercase
+ */
+function spa_normalize_text_for_comparison($text) {
+    // Odstrániť diakritiku
+    $text = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+    
+    // Trim a lowercase
+    return trim(strtolower($text));
+}
+
+/**
  * Rozbalenie ZIP archívu
  * 
  * @param string $zip_path Cesta k ZIP súboru
@@ -89,14 +103,8 @@ function spa_cleanup_temp_files($path) {
  * @param string $group_name Názov skupiny
  * @return int|false Group ID alebo false
  */
-/**
- * Vyhľadať skupinu podľa názvu (post_title)
- * 
- * @param string $group_name Názov skupiny
- * @return int|false Group ID alebo false
- */
 function spa_find_group_by_name($group_name) {
-    $normalized_search = spa_normalize_text($group_name);
+    $normalized_search = spa_normalize_text_for_comparison($group_name);
     
     $query = new WP_Query([
         'post_type' => 'spa_group',
@@ -112,7 +120,7 @@ function spa_find_group_by_name($group_name) {
     // Hľadať exact match (normalizované)
     foreach ($query->posts as $group_id) {
         $group_title = get_the_title($group_id);
-        $normalized_title = spa_normalize_text($group_title);
+        $normalized_title = spa_normalize_text_for_comparison($group_title);
         
         if ($normalized_title === $normalized_search) {
             return $group_id;
@@ -122,7 +130,7 @@ function spa_find_group_by_name($group_name) {
     // Ak exact match nenájdený, skúsiť partial match
     foreach ($query->posts as $group_id) {
         $group_title = get_the_title($group_id);
-        $normalized_title = spa_normalize_text($group_title);
+        $normalized_title = spa_normalize_text_for_comparison($group_title);
         
         if (strpos($normalized_title, $normalized_search) !== false) {
             return $group_id;
@@ -708,9 +716,18 @@ function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '
         update_post_meta($registration_id, 'registration_date', $registration_date);
         update_post_meta($registration_id, 'registration_status', 'active');
 
-        // Sezóna a zdroj ceny
-        $season = spa_get_season_from_date($registration_date);
-        update_post_meta($registration_id, 'spa_price_season', $season);
+        // Sezóna (použiť existujúcu funkciu na výpočet)
+        if (function_exists('spa_get_current_season')) {
+            $calculated_season = spa_get_current_season($registration_date);
+        } else {
+            // Fallback ak funkcia neexistuje
+            $month = (int)date('n', strtotime($registration_date));
+            $year = (int)date('Y', strtotime($registration_date));
+            $calculated_season = ($month >= 9) ? $year . '/' . ($year + 1) : ($year - 1) . '/' . $year;
+        }
+        update_post_meta($registration_id, 'spa_price_season', $calculated_season);
+
+        // Zdroj ceny
         update_post_meta($registration_id, 'spa_price_source', 'csv_import');
 
         // Import metadata (pre export tracking)
