@@ -487,10 +487,54 @@ function spa_get_season_from_date($date) {
         'processed_files' => 0
     ];
     
-    foreach ($files_to_process as $file_info) {
-        $total_stats['processed_files']++;
-    }
     
+    foreach ($files_to_process as $file_info) {
+            $csv_path = $file_info['path'];
+            $csv_filename = $file_info['filename'];
+            
+            // Otvorenie CSV súboru
+            $handle = fopen($csv_path, 'r');
+            
+            if ($handle === false) {
+                $total_stats['errors']++;
+                continue;
+            }
+            
+            // Preskočiť hlavičku (prvý riadok)
+            fgetcsv($handle, 0, ';');
+            
+            // Spracovanie riadkov
+            while (($row = fgetcsv($handle, 0, ';')) !== false) {
+                
+                // Preskočiť prázdne riadky
+                if (empty(array_filter($row))) {
+                    continue;
+                }
+                
+                // Vytvorenie registrácie
+                $registration_id = wp_insert_post([
+                    'post_type' => 'spa_registration',
+                    'post_title' => 'Import registrácia ' . date('Y-m-d H:i:s'),
+                    'post_status' => 'publish'
+                ]);
+                
+                if (is_wp_error($registration_id) || !$registration_id) {
+                    $total_stats['errors']++;
+                    continue;
+                }
+                
+                // Uloženie meta polí
+                update_post_meta($registration_id, 'spa_group_id', $target_group_id);
+                update_post_meta($registration_id, 'import_source', 'csv');
+                update_post_meta($registration_id, 'import_filename', $csv_filename);
+                
+                $total_stats['success']++;
+            }
+            
+            fclose($handle);
+            $total_stats['processed_files']++;
+        }
+   
     // Vyčistiť dočasné súbory
     if (!empty($temp_path)) {
         spa_cleanup_temp_files($temp_path);
