@@ -306,15 +306,17 @@ function spa_save_import_log($stats) {
     file_put_contents($log_file, $log_content);
 }
 
-//**
+
+/**
  * Nájsť spa_group podľa presného termínu
- * 
  * @param int $program_id ID programu (spa_group)
  * @param int $city_id ID mesta (spa_place)
  * @param string $day Deň (mo, tu, we, ...)
  * @param string $time Čas (HH:MM)
  * @return int|false Group ID alebo false
  */
+
+
 function spa_find_group_by_schedule($program_id, $city_id, $day, $time) {
     
     // Program ID = priamo spa_group ID (nie meta pole)
