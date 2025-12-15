@@ -219,9 +219,10 @@ function spa_render_import_admin_page() {
                 <strong>⚠️ Dôležité:</strong> Všetky polia sú povinné. Import priradí registrácie presne k skupine s týmto termínom.
             </p>
             
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
+            <form id="spa-import-form" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
                 <?php wp_nonce_field('spa_csv_import', 'spa_csv_import_nonce'); ?>
                 <input type="hidden" name="action" value="spa_import_csv">
+                <input type="hidden" name="import_group_id" id="import_group_id" value="">
                 
                 <table class="form-table">
                     <tr>
@@ -357,6 +358,23 @@ function spa_render_import_admin_page() {
                     <input type="submit" name="submit" id="submit" class="button button-primary" value="Importovať registrácie">
                 </p>
             </form>
+            
+            <script>
+            jQuery(document).ready(function($) {
+                $('#spa-import-form').on('submit', function(e) {
+                    var programId = $('#import_program').val();
+                    
+                    if (!programId) {
+                        alert('Musíte vybrať program!');
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    $('#import_group_id').val(programId);
+                    console.log('Odosielam group_id: ' + programId);
+                });
+            });
+            </script>
             
             <hr>
             
