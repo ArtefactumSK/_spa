@@ -254,7 +254,7 @@ function spa_render_import_admin_page() {
                                 echo '<option value="" disabled>⚠️ Žiadne programy nenájdené</option>';
                                 
                                 // DEBUG - Skontrolovať či existujú programy
-                                $debug_count = wp_count_posts('spa_program');
+                                $debug_count = wp_count_posts('spa_group');
                                 if (isset($debug_count->publish) && $debug_count->publish > 0) {
                                     printf(
                                         '<option value="" disabled>DEBUG: Existuje %d publikovaných programov, ale nezobrazujú sa</option>',

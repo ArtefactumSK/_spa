@@ -296,7 +296,7 @@ function spa_get_trainer_programs($trainer_id) {
     
     $programs = array();
     foreach ($program_ids as $id) {
-        $term = get_term($id, 'spa_program');
+        $term = get_post($id);
         if ($term && !is_wp_error($term)) {
             $programs[] = $term->name;
         }
