@@ -230,7 +230,7 @@ function spa_render_import_admin_page() {
                             <?php
                             // Načítať VŠETKY programy - BEZ akýchkoľvek filtrov
                             $programs_query = new WP_Query([
-                                'post_type' => 'spa_program',
+                                'post_type' => 'spa_group',
                                 'post_status' => 'publish',
                                 'posts_per_page' => -1,
                                 'orderby' => 'title',
