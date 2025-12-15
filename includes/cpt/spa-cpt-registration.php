@@ -226,29 +226,44 @@ function spa_render_import_admin_page() {
                         </th>
                         <td>
                             <select name="import_program" id="import_program" required style="width: 100%; max-width: 400px;">
-                                <option value="">-- Vyberte program --</option>
-                                <?php
-                                $programs = get_posts([
-                                    'post_type' => 'spa_program',
-                                    'post_status' => 'publish',
-                                    'posts_per_page' => -1,
-                                    'orderby' => 'title',
-                                    'order' => 'ASC'
-                                ]);
-                                
-                                if (!empty($programs)) {
-                                    foreach ($programs as $program) {
-                                        printf(
-                                            '<option value="%d">%s</option>',
-                                            $program->ID,
-                                            esc_html($program->post_title)
-                                        );
-                                    }
-                                } else {
-                                    echo '<option value="" disabled>Žiadne programy nenájdené</option>';
+                            <option value="">-- Vyberte program --</option>
+                            <?php
+                            // Načítať VŠETKY programy - BEZ akýchkoľvek filtrov
+                            $programs_query = new WP_Query([
+                                'post_type' => 'spa_program',
+                                'post_status' => 'publish',
+                                'posts_per_page' => -1,
+                                'orderby' => 'title',
+                                'order' => 'ASC',
+                                'no_found_rows' => true,
+                                'update_post_meta_cache' => false,
+                                'update_post_term_cache' => false
+                            ]);
+                            
+                            if ($programs_query->have_posts()) {
+                                while ($programs_query->have_posts()) {
+                                    $programs_query->the_post();
+                                    printf(
+                                        '<option value="%d">%s</option>',
+                                        get_the_ID(),
+                                        esc_html(get_the_title())
+                                    );
                                 }
-                                ?>
-                            </select>
+                                wp_reset_postdata();
+                            } else {
+                                echo '<option value="" disabled>⚠️ Žiadne programy nenájdené</option>';
+                                
+                                // DEBUG - Skontrolovať či existujú programy
+                                $debug_count = wp_count_posts('spa_program');
+                                if (isset($debug_count->publish) && $debug_count->publish > 0) {
+                                    printf(
+                                        '<option value="" disabled>DEBUG: Existuje %d publikovaných programov, ale nezobrazujú sa</option>',
+                                        $debug_count->publish
+                                    );
+                                }
+                            }
+                            ?>
+                        </select>
                             <p class="description">Vyberte tréningový program (nezávisle od miesta)</p>
                         </td>
                     </tr>
