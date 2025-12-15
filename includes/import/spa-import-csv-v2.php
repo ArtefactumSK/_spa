@@ -89,8 +89,14 @@ function spa_cleanup_temp_files($path) {
  * @param string $group_name Názov skupiny
  * @return int|false Group ID alebo false
  */
+/**
+ * Vyhľadať skupinu podľa názvu (post_title)
+ * 
+ * @param string $group_name Názov skupiny
+ * @return int|false Group ID alebo false
+ */
 function spa_find_group_by_name($group_name) {
-    $normalized_name = trim(strtolower($group_name));
+    $normalized_search = spa_normalize_text($group_name);
     
     $query = new WP_Query([
         'post_type' => 'spa_group',
@@ -103,12 +109,12 @@ function spa_find_group_by_name($group_name) {
         return false;
     }
 
-    // Hľadať exact match (case-insensitive)
+    // Hľadať exact match (normalizované)
     foreach ($query->posts as $group_id) {
         $group_title = get_the_title($group_id);
-        $normalized_title = trim(strtolower($group_title));
+        $normalized_title = spa_normalize_text($group_title);
         
-        if ($normalized_title === $normalized_name) {
+        if ($normalized_title === $normalized_search) {
             return $group_id;
         }
     }
@@ -116,9 +122,9 @@ function spa_find_group_by_name($group_name) {
     // Ak exact match nenájdený, skúsiť partial match
     foreach ($query->posts as $group_id) {
         $group_title = get_the_title($group_id);
-        $normalized_title = trim(strtolower($group_title));
+        $normalized_title = spa_normalize_text($group_title);
         
-        if (strpos($normalized_title, $normalized_name) !== false) {
+        if (strpos($normalized_title, $normalized_search) !== false) {
             return $group_id;
         }
     }
@@ -320,6 +326,46 @@ function spa_process_csv_import() {
     $files_to_process = [];
     $zip_name = '';
     $temp_path = '';
+    
+    /**
+ * Normalizácia textu pre porovnanie
+ * - odstráni diakritiku
+ * - odstráni špeciálne znaky
+ * - nahradí viacnásobné medzery jednou
+ */
+function spa_normalize_text($text) {
+    // Odstrániť diakritiku
+    $text = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+    
+    // Odstrániť špeciálne znaky (ponechať len alfanumerické a medzery)
+    $text = preg_replace('/[^a-z0-9\s]/i', '', $text);
+    
+    // Nahradiť viacnásobné medzery jednou
+    $text = preg_replace('/\s+/', ' ', $text);
+    
+    // Trim a lowercase
+    return trim(strtolower($text));
+}
+
+/**
+ * Určiť sezónu na základe dátumu
+ * 
+ * @param string $date Dátum vo formáte 'Y-m-d H:i:s'
+ * @return string Rok sezóny (napr. "2024/2025")
+ */
+function spa_get_season_from_date($date) {
+    $timestamp = strtotime($date);
+    $month = (int)date('n', $timestamp);
+    $year = (int)date('Y', $timestamp);
+    
+    // September - December = aktuálny rok / nasledujúci rok
+    if ($month >= 9) {
+        return $year . '/' . ($year + 1);
+    }
+    
+    // Január - August = predchádzajúci rok / aktuálny rok
+    return ($year - 1) . '/' . $year;
+}
     
     // === DETEKCIA TYPU SÚBORU ===
     
@@ -652,13 +698,20 @@ function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '
         }
 
         // === 8. ULOŽENIE META POLÍ ===
-        
+
+        $registration_date = current_time('mysql');
+
         // Základné prepojenia
         update_post_meta($registration_id, 'child_id', $child_id);
         update_post_meta($registration_id, 'parent_id', $parent_id);
         update_post_meta($registration_id, 'group_id', $group_id);
-        update_post_meta($registration_id, 'registration_date', current_time('mysql'));
+        update_post_meta($registration_id, 'registration_date', $registration_date);
         update_post_meta($registration_id, 'registration_status', 'active');
+
+        // Sezóna a zdroj ceny
+        $season = spa_get_season_from_date($registration_date);
+        update_post_meta($registration_id, 'spa_price_season', $season);
+        update_post_meta($registration_id, 'spa_price_source', 'csv_import');
 
         // Import metadata (pre export tracking)
         if (!empty($city)) {
