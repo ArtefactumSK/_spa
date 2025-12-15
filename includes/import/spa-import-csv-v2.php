@@ -731,33 +731,18 @@ function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '
         // === 3. PREPOJENIE RODIČ ↔ DIEŤA ===
         spa_link_parent_child($parent_id, $child_id);
 
-        // === 4. AUTOMATICKÉ URČENIE SKUPINY ===
-        
-        $csv_group_name = isset($row_data['skupiny']) && !empty($row_data['skupiny']) 
-            ? sanitize_text_field($row_data['skupiny']) 
-            : '';
-        
-        $group_search_name = !empty($csv_group_name) ? $csv_group_name : $fallback_group_name;
+        // === 4. PRIRADENIE K CIEĽOVEJ SKUPINE ===
 
-        if (empty($group_search_name)) {
+        // Skupina je už určená z admin UI
+        $group_id = $target_group_id;
+
+        if (!$group_id || get_post_status($group_id) !== 'publish') {
             $import_stats['errors']++;
             $import_stats['error_log'][] = sprintf(
-                '[%s - Riadok %d] Chýba názov skupiny v CSV aj v názve súboru',
-                $filename,
-                $row_number
-            );
-            continue;
-        }
-
-        $group_id = spa_find_group_by_name($group_search_name);
-
-        if (!$group_id) {
-            $import_stats['errors']++;
-            $import_stats['error_log'][] = sprintf(
-                '[%s - Riadok %d] Skupina "%s" sa nenašla v systéme',
+                '[%s - Riadok %d] Cieľová skupina (ID: %d) neexistuje alebo nie je publikovaná',
                 $filename,
                 $row_number,
-                $group_search_name
+                $target_group_id
             );
             continue;
         }
