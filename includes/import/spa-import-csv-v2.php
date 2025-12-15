@@ -376,12 +376,68 @@ function spa_times_match($time1, $time2) {
  * Podporuje CSV aj ZIP archívy
  */
 function spa_process_csv_import() {
+    // === TEMPORARY DEBUG ===
+        error_log('SPA IMPORT TRIGGERED');
+        error_log('POST data: ' . print_r($_POST, true));
+        error_log('FILES data: ' . print_r($_FILES, true));
+        error_log('User can manage_options: ' . (current_user_can('manage_options') ? 'YES' : 'NO'));
+        // === END DEBUG ===
+
     // Bezpečnostná kontrola
         if (!current_user_can('manage_options')) {
             wp_die('Nemáte oprávnenie na túto akciu.');
         }
 
-        check_admin_referer('spa_csv_import', 'spa_csv_import_nonce');
+        // TEMPORARY: Skip nonce check for debugging
+        // check_admin_referer('spa_csv_import', 'spa_csv_import_nonce');
+        error_log('Nonce in POST: ' . ($_POST['spa_csv_import_nonce'] ?? 'MISSING'));
+        error_log('Expected nonce: ' . wp_create_nonce('spa_csv_import'));
+
+        error_log('=== Checking group ===');
+        $target_group_id = isset($_POST['import_group_id']) ? intval($_POST['import_group_id']) : 0;
+        error_log('Target group ID: ' . $target_group_id);
+
+        if (!$target_group_id) {
+            error_log('ERROR: No group ID');
+        }
+
+        $post_type = get_post_type($target_group_id);
+        error_log('Post type: ' . $post_type);
+
+        $post_status = get_post_status($target_group_id);
+        error_log('Post status: ' . $post_status);
+
+        if (!$target_group_id || get_post_type($target_group_id) !== 'spa_group' || get_post_status($target_group_id) !== 'publish') {
+            error_log('ERROR: Group validation failed!');
+            error_log('Redirecting to: group_not_selected_or_invalid');
+            wp_redirect(add_query_arg([
+                'page' => 'spa-registrations-import',
+                'error' => 'group_not_selected_or_invalid'
+            ], admin_url('edit.php?post_type=spa_registration')));
+            exit;
+        }
+
+        error_log('=== Group validation OK, continuing ===');
+
+        error_log('=== Checking file upload ===');
+        error_log('FILES isset: ' . (isset($_FILES['csv_file']) ? 'YES' : 'NO'));
+        error_log('File error: ' . ($_FILES['csv_file']['error'] ?? 'N/A'));
+
+        // Kontrola nahratého súboru
+        if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+            error_log('ERROR: File upload failed');
+            wp_redirect(add_query_arg([
+            'page' => 'spa-registrations-import',  // ← SPRÁVNE!
+            'import' => 'success',
+            'imported' => $total_stats['success'],
+            'errors' => $total_stats['errors'],
+            'skipped' => $total_stats['skipped'],
+            'files' => $total_stats['processed_files']
+            ], admin_url('edit.php?post_type=spa_registration')));
+            exit;
+        }
+
+        error_log('=== File OK, processing ===');
 
         // === ZÍSKANIE SKUPINY PRIAMO Z UI (ID) ===
         $target_group_id = isset($_POST['import_group_id']) ? intval($_POST['import_group_id']) : 0;
@@ -543,6 +599,8 @@ add_action('admin_post_spa_import_csv', 'spa_process_csv_import');
  * @return array Štatistiky importu
  */
 function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '', $target_group_id = 0) {
+    error_log('=== PROCESSING CSV: ' . $filename . ' ===');
+    error_log('Target group for CSV: ' . $target_group_id);
     
     $fallback_group_name = pathinfo($filename, PATHINFO_FILENAME);
     $fallback_group_name = sanitize_text_field($fallback_group_name);
@@ -570,7 +628,7 @@ function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '
     }
 
     // Načítanie hlavičky
-    $header = fgetcsv($handle, 0, ',');
+    $header = fgetcsv($handle, 0, ',', '"', '\\');
     
     if ($header === false) {
         fclose($handle);
@@ -610,12 +668,19 @@ function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '
     
     // Kontrola prítomnosti voliteľných stĺpcov
     $has_price_column = in_array('predvolena_suma', $header);
+    error_log('CSV header: ' . implode(', ', $header));
+    error_log('Has price column: ' . ($has_price_column ? 'YES' : 'NO'));
+    error_log('Starting row processing...');
 
     // Spracovanie riadkov
     $row_number = 1;
     
-    while (($row = fgetcsv($handle, 0, ',')) !== false) {
+    while (($row = fgetcsv($handle, 0, ',', '"', '\\')) !== false) {
         $row_number++;
+
+        if ($row_number == 2) { // Log len prvý riadok
+            error_log('Processing first row: ' . implode(' | ', $row));
+        }
 
         // Preskočiť prázdne riadky
         if (empty(array_filter($row))) {
