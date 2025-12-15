@@ -139,3 +139,222 @@ function spa_registration_menu_target_blank() {
     </script>
     <?php
 }
+
+/**
+ * ============================================================================
+ * CSV IMPORT SUBMENU - DOČASNÝ ADMIN NÁSTROJ
+ * ============================================================================
+ */
+
+function spa_register_import_admin_page() {
+    add_submenu_page(
+        'edit.php?post_type=spa_registration',
+        'Import registrácií (CSV)',
+        'Import',
+        'manage_options',
+        'spa-registrations-import',
+        'spa_render_import_admin_page'
+    );
+}
+add_action('admin_menu', 'spa_register_import_admin_page', 50);
+
+function spa_render_import_admin_page() {
+    ?>
+    <div class="wrap">
+        <h1>Import registrácií (CSV/ZIP)</h1>
+        
+        <?php
+        // Zobrazenie výsledkov importu
+        if (isset($_GET['import']) && $_GET['import'] === 'success') {
+            $imported = isset($_GET['imported']) ? intval($_GET['imported']) : 0;
+            $errors = isset($_GET['errors']) ? intval($_GET['errors']) : 0;
+            $skipped = isset($_GET['skipped']) ? intval($_GET['skipped']) : 0;
+            $files = isset($_GET['files']) ? intval($_GET['files']) : 1;
+            
+            echo '<div class="notice notice-success is-dismissible"><p>';
+            echo '<strong>Import dokončený!</strong><br>';
+            echo sprintf('Spracovaných súborov: %d<br>', $files);
+            echo sprintf('Úspešne importované: %d<br>', $imported);
+            echo sprintf('Chyby: %d<br>', $errors);
+            echo sprintf('Preskočené: %d', $skipped);
+            echo '</p></div>';
+        }
+        
+        // Zobrazenie chýb
+        if (isset($_GET['error'])) {
+            $error_msg = 'Neznáma chyba';
+            switch ($_GET['error']) {
+                case 'upload_failed':
+                    $error_msg = 'Chyba pri nahrávaní súboru.';
+                    break;
+                case 'zip_extraction_failed':
+                    $error_msg = 'Nepodarilo sa rozbaliť ZIP archív.';
+                    break;
+                case 'invalid_file_type':
+                    $error_msg = 'Neplatný typ súboru. Povolené sú len CSV a ZIP.';
+                    break;
+                case 'missing_columns':
+                    $missing = isset($_GET['missing']) ? sanitize_text_field($_GET['missing']) : '';
+                    $error_msg = 'Chýbajúce stĺpce v CSV: ' . $missing;
+                    break;
+                case 'missing_schedule_params':
+                    $error_msg = 'Musíte vyplniť: Program, Mesto, Deň v týždni a Čas začiatku.';
+                    break;
+                case 'group_not_found':
+                    $params = isset($_GET['params']) ? sanitize_text_field($_GET['params']) : '';
+                    $error_msg = 'Skupina sa nenašla pre zadané parametre: ' . $params;
+                    break;
+            }
+            echo '<div class="notice notice-error is-dismissible"><p><strong>Chyba:</strong> ' . esc_html($error_msg) . '</p></div>';
+        }
+        ?>
+        
+        <div class="card" style="max-width: 800px;">
+            <h2>1. Vyberte tréningový termín</h2>
+            <p class="description" style="margin-bottom: 20px;">
+                <strong>⚠️ Dôležité:</strong> Všetky polia sú povinné. Import priradí registrácie presne k skupine s týmto termínom.
+            </p>
+            
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
+                <?php wp_nonce_field('spa_csv_import', 'spa_csv_import_nonce'); ?>
+                <input type="hidden" name="action" value="spa_import_csv">
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">
+                            <label for="import_program">Program <span style="color:red;">*</span></label>
+                        </th>
+                        <td>
+                            <select name="import_program" id="import_program" required style="width: 100%; max-width: 400px;">
+                                <option value="">-- Vyberte program --</option>
+                                <?php
+                                $programs = get_posts([
+                                    'post_type' => 'spa_program',
+                                    'post_status' => 'publish',
+                                    'posts_per_page' => -1,
+                                    'orderby' => 'title',
+                                    'order' => 'ASC'
+                                ]);
+                                foreach ($programs as $program) {
+                                    printf(
+                                        '<option value="%d">%s</option>',
+                                        $program->ID,
+                                        esc_html($program->post_title)
+                                    );
+                                }
+                                ?>
+                            </select>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="import_city">Mesto <span style="color:red;">*</span></label>
+                        </th>
+                        <td>
+                            <select name="import_city" id="import_city" required style="width: 100%; max-width: 400px;">
+                                <option value="">-- Vyberte mesto --</option>
+                                <?php
+                                $places = get_posts([
+                                    'post_type' => 'spa_place',
+                                    'post_status' => 'publish',
+                                    'posts_per_page' => -1,
+                                    'orderby' => 'title',
+                                    'order' => 'ASC'
+                                ]);
+                                foreach ($places as $place) {
+                                    printf(
+                                        '<option value="%d">%s</option>',
+                                        $place->ID,
+                                        esc_html($place->post_title)
+                                    );
+                                }
+                                ?>
+                            </select>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="import_day">Deň v týždni <span style="color:red;">*</span></label>
+                        </th>
+                        <td>
+                            <select name="import_day" id="import_day" required style="width: 100%; max-width: 400px;">
+                                <option value="">-- Vyberte deň --</option>
+                                <option value="mo">Pondelok</option>
+                                <option value="tu">Utorok</option>
+                                <option value="we">Streda</option>
+                                <option value="th">Štvrtok</option>
+                                <option value="fr">Piatok</option>
+                                <option value="sa">Sobota</option>
+                                <option value="su">Nedeľa</option>
+                            </select>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="import_time">Čas začiatku <span style="color:red;">*</span></label>
+                        </th>
+                        <td>
+                            <input type="time" 
+                                   name="import_time" 
+                                   id="import_time" 
+                                   required 
+                                   min="06:00" 
+                                   max="22:00"
+                                   style="width: 150px;">
+                            <p class="description">Formát: HH:MM (napr. 16:00)</p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <hr style="margin: 30px 0;">
+                
+                <h2>2. Nahrajte CSV/ZIP súbor</h2>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">
+                            <label for="csv_file">Súbor <span style="color:red;">*</span></label>
+                        </th>
+                        <td>
+                            <input type="file" name="csv_file" id="csv_file" accept=".csv,.zip" required>
+                            <p class="description">
+                                Povolené formáty: CSV, ZIP<br>
+                                ZIP môže obsahovať viacero CSV súborov v adresároch
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <p class="submit">
+                    <input type="submit" name="submit" id="submit" class="button button-primary" value="Importovať registrácie">
+                </p>
+            </form>
+            
+            <hr>
+            
+            <h3>Formát CSV súboru</h3>
+            <p>Povinné stĺpce:</p>
+            <ul>
+                <li><code>meno</code>, <code>priezvisko</code>, <code>pohlavie</code> (M/F)</li>
+                <li><code>datum_narodenia</code> (DD.MM.YYYY)</li>
+                <li><code>meno_rodica</code>, <code>priezvisko_rodica</code></li>
+                <li><code>email</code>, <code>telefon</code></li>
+            </ul>
+            
+            <p>Voliteľné stĺpce:</p>
+            <ul>
+                <li><code>predvolena_suma</code> – cena (25.50 alebo 25,50)</li>
+            </ul>
+            
+            <p><strong>⚠️ Dôležité:</strong> Deň a čas sa NEBERÚ z CSV, ale z vybraných polí vyššie.</p>
+            
+            <p><strong>Duplicity:</strong> Ak registrácia už existuje (dieťa v danej skupine), nebude sa vytvárať znova a cena ostane pôvodná.</p>
+            
+            <p><strong>Logy:</strong> <code><?php echo esc_html(wp_upload_dir()['basedir'] . '/spa-import-logs/'); ?></code></p>
+        </div>
+    </div>
+    <?php
+}

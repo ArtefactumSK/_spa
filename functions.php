@@ -149,7 +149,7 @@ spa_load_module('import/spa-import-csv-v2.php');
    ========================== */
 spa_load_module('spa-meta-boxes.php');      // ← Zakomentuj starý
 spa_load_module('spa-admin-columns.php');   // ← KRITICKÉ! (Admin columns)
-spa_load_module('admin/spa-admin-schedule.php');
+
 
 /* ==========================
    ZAKOMENTOVANÉ MODULY (Budúce alebo problematické)
