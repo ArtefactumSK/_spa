@@ -571,5 +571,86 @@ function spa_get_season_from_date($date) {
     exit;
     
 }
+
+/**
+ * Spracovanie jedného CSV súboru
+ */
+function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '', $target_group_id = 0) {
+    
+    $import_stats = [
+        'success' => 0,
+        'errors' => 0,
+        'skipped' => 0,
+        'error_log' => []
+    ];
+    
+    // Otvorenie CSV súboru
+    $handle = fopen($file_path, 'r');
+    
+    if ($handle === false) {
+        $import_stats['errors']++;
+        $import_stats['error_log'][] = 'Chyba otvorenia súboru: ' . $filename;
+        error_log('ERROR: Cannot open CSV file: ' . $filename);
+        return $import_stats;
+    }
+    
+    // Načítanie prvého riadku (header)
+    $first_line = fgets($handle);
+    
+    // Odstránenie UTF-8 BOM
+    if (substr($first_line, 0, 3) === "\xEF\xBB\xBF") {
+        $first_line = substr($first_line, 3);
+    }
+    
+    // Parsovanie hlavičky
+    $header = str_getcsv($first_line, ';', '"', '\\');
+    $header = array_map('trim', $header);
+    
+    error_log('CSV HEADERS: ' . implode(' | ', $header));
+    
+    // Spracovanie riadkov
+    $row_number = 1;
+    
+    while (($row = fgetcsv($handle, 0, ';', '"', '\\')) !== false) {
+        $row_number++;
+        
+        // Preskočiť prázdne riadky
+        if (empty(array_filter($row))) {
+            $import_stats['skipped']++;
+            continue;
+        }
+        
+        error_log('ROW ' . $row_number . ': ' . implode(' | ', $row));
+        
+        // Vytvorenie registrácie
+        $registration_id = wp_insert_post([
+            'post_type' => 'spa_registration',
+            'post_title' => 'Import registrácia ' . date('Y-m-d H:i:s') . ' #' . $row_number,
+            'post_status' => 'publish'
+        ]);
+        
+        if (is_wp_error($registration_id) || !$registration_id) {
+            $import_stats['errors']++;
+            $import_stats['error_log'][] = 'Chyba vytvorenia registrácie na riadku ' . $row_number;
+            error_log('ERROR: Failed to create registration for row ' . $row_number);
+            continue;
+        }
+        
+        // Uloženie meta polí
+        update_post_meta($registration_id, 'spa_group_id', $target_group_id);
+        update_post_meta($registration_id, 'import_source', 'csv');
+        update_post_meta($registration_id, 'import_filename', $filename);
+        update_post_meta($registration_id, 'import_timestamp', current_time('mysql'));
+        
+        error_log('CREATED: Registration ID ' . $registration_id . ' for row ' . $row_number);
+        
+        $import_stats['success']++;
+    }
+    
+    fclose($handle);
+    
+    return $import_stats;
+}
+
 add_action('admin_post_spa_import_csv', 'spa_process_csv_import');
 
