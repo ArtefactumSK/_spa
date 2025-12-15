@@ -494,6 +494,11 @@ function spa_get_season_from_date($date) {
             
             // Otvorenie CSV súboru
             $handle = fopen($csv_path, 'r');
+            // odstránenie BOM (UTF-8)
+            $firstLine = fgets($handle);
+            $firstLine = preg_replace('/^\xEF\xBB\xBF/', '', $firstLine);
+            $headers = str_getcsv($firstLine, ';');
+
             
             if ($handle === false) {
                 $total_stats['errors']++;
@@ -505,9 +510,23 @@ function spa_get_season_from_date($date) {
             
             // Spracovanie riadkov
             while (($row = fgetcsv($handle, 0, ';')) !== false) {
-                
+                error_log('CSV ROW: ' . print_r($row, true));
+
+                $post_id = wp_insert_post([
+                    'post_type'   => 'spa_registration',
+                    'post_status' => 'publish',
+                    'post_title'  => trim($row[0] . ' ' . $row[1]),
+                ]);
+
+                if (!is_wp_error($post_id)) {
+                    add_post_meta($post_id, 'spa_group_id', $target_group_id);
+                    $total_stats['success']++;
+                } else {
+                    $total_stats['errors']++;
+                }
+
                 // Preskočiť prázdne riadky
-                if (empty(array_filter($row))) {
+               /*  if (empty(array_filter($row))) {
                     continue;
                 }
                 
@@ -528,7 +547,7 @@ function spa_get_season_from_date($date) {
                 update_post_meta($registration_id, 'import_source', 'csv');
                 update_post_meta($registration_id, 'import_filename', $csv_filename);
                 
-                $total_stats['success']++;
+                $total_stats['success']++; */
             }
             
             fclose($handle);
