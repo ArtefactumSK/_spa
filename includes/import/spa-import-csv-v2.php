@@ -726,7 +726,6 @@ function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '
         // Cena z CSV (len ak bola zadaná)
         if ($csv_price !== null && $csv_price > 0) {
             update_post_meta($registration_id, 'registration_price', $csv_price);
-            update_post_meta($registration_id, 'price_source', 'csv_import');
         }
 
         $import_stats['success']++;
