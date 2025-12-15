@@ -398,6 +398,7 @@ function spa_process_csv_import() {
     }
 
     // === NÁJDENIE SKUPINY PODĽA TERMÍNU ===
+    // === NÁJDENIE SKUPINY PODĽA TERMÍNU ===
     $target_group_id = spa_find_group_by_schedule(
         $import_program,
         $import_city,
@@ -408,26 +409,12 @@ function spa_process_csv_import() {
     if (!$target_group_id) {
         $program_title = get_the_title($import_program);
         $city_title = get_the_title($import_city);
-        $day_labels = [
-            'mo' => 'Pondelok', 'tu' => 'Utorok', 'we' => 'Streda',
-            'th' => 'Štvrtok', 'fr' => 'Piatok', 'sa' => 'Sobota', 'su' => 'Nedeľa'
-        ];
-        
-        $error_params = sprintf(
-            '%s, %s, %s %s',
-            $program_title,
-            $city_title,
-            $day_labels[$import_day] ?? $import_day,
-            $import_time
-        );
-        
-        wp_redirect(add_query_arg([
-            'page' => 'spa-registrations-import',
-            'error' => 'group_not_found',
-            'params' => urlencode($error_params)
-        ], admin_url('edit.php?post_type=spa_registration')));
+        $day_labels = [ 'mo' => 'Pondelok', 'tu' => 'Utorok', 'we' => 'Streda', 'th' => 'Štvrtok', 'fr' => 'Piatok', 'sa' => 'Sobota', 'su' => 'Nedeľa' ];
+        $error_params = sprintf( '%s, %s, %s %s', $program_title, $city_title, $day_labels[$import_day] ?? $import_day, $import_time );
+        wp_redirect(add_query_arg([ 'page' => 'spa-registrations-import', 'error' => 'group_not_found', 'params' => urlencode($error_params) ], admin_url('edit.php?post_type=spa_registration')));
         exit;
     }
+
 
         // Kontrola nahratého súboru
     if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
