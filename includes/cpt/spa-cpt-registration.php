@@ -183,6 +183,12 @@ function spa_render_import_admin_page() {
         // Zobrazenie chýb
         if (isset($_GET['error'])) {
             $error_msg = 'Neznáma chyba';
+            
+            // DEBUG: Zobraziť všetky URL parametre
+            echo '<div style="background:#f0f0f0;padding:10px;margin:10px 0;"><strong>DEBUG URL params:</strong><pre>';
+            print_r($_GET);
+            echo '</pre></div>';
+            
             switch ($_GET['error']) {
                 case 'upload_failed':
                     $error_msg = 'Chyba pri nahrávaní súboru.';
@@ -193,10 +199,6 @@ function spa_render_import_admin_page() {
                 case 'invalid_file_type':
                     $error_msg = 'Neplatný typ súboru. Povolené sú len CSV a ZIP.';
                     break;
-                case 'missing_columns':
-                    $missing = isset($_GET['missing']) ? sanitize_text_field($_GET['missing']) : '';
-                    $error_msg = 'Chýbajúce stĺpce v CSV: ' . $missing;
-                    break;
                 case 'missing_schedule_params':
                     $error_msg = 'Musíte vyplniť: Program, Mesto, Deň v týždni a Čas začiatku.';
                     break;
@@ -204,6 +206,8 @@ function spa_render_import_admin_page() {
                     $params = isset($_GET['params']) ? sanitize_text_field($_GET['params']) : '';
                     $error_msg = 'Skupina sa nenašla pre zadané parametre: ' . $params;
                     break;
+                default:
+                    $error_msg = 'Neznáma chyba (kod: ' . sanitize_text_field($_GET['error']) . ')';
             }
             echo '<div class="notice notice-error is-dismissible"><p><strong>Chyba:</strong> ' . esc_html($error_msg) . '</p></div>';
         }
@@ -270,11 +274,11 @@ function spa_render_import_admin_page() {
                     
                     <tr>
                         <th scope="row">
-                            <label for="import_city">Mesto <span style="color:red;">*</span></label>
+                            <label for="import_city">SPA miesto (adresa) <span style="color:red;">*</span></label>
                         </th>
                         <td>
                             <select name="import_city" id="import_city" required style="width: 100%; max-width: 400px;">
-                                <option value="">-- Vyberte mesto --</option>
+                                <option value="">-- Vyberte SPA miesto --</option>
                                 <?php
                                 $places = get_posts([
                                     'post_type' => 'spa_place',

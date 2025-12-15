@@ -393,6 +393,14 @@ if (!$target_group_id || get_post_type($target_group_id) !== 'spa_group' || get_
     ], admin_url('edit.php?post_type=spa_registration')));
     exit;
 }
+// === TEMPORARY DEBUG ===
+error_log('SPA IMPORT DEBUG:');
+error_log('Target Group ID: ' . $target_group_id);
+error_log('Files processed: ' . $total_stats['processed_files']);
+error_log('Success: ' . $total_stats['success']);
+error_log('Errors: ' . $total_stats['errors']);
+error_log('Error log: ' . print_r($total_stats['error_log'], true));
+// === END DEBUG ===
 
         // Kontrola nahratého súboru
     if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
