@@ -155,7 +155,8 @@ function spa_register_import_admin_page() {
         'spa_render_import_admin_page'           // Callback
     );
 }
-add_action('admin_menu', 'spa_register_import_admin_page');
+
+add_action('admin_menu', 'spa_register_import_admin_page', 1000);
 
 /**
  * Render admin stránky pre CSV import
