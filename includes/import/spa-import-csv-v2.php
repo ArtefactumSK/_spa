@@ -383,16 +383,53 @@ function spa_process_csv_import() {
 
     check_admin_referer('spa_csv_import', 'spa_csv_import_nonce');
 
-    // === ZÍSKANIE SKUPINY PRIAMO Z UI (ID) ===
-$target_group_id = isset($_POST['import_group_id']) ? intval($_POST['import_group_id']) : 0;
+ 
+    // === VALIDÁCIA POVINNÝCH PARAMETROV TERMÍNU ===
+    $import_program = isset($_POST['import_program']) ? intval($_POST['import_program']) : 0;
+    $import_city = isset($_POST['import_city']) ? intval($_POST['import_city']) : 0;
+    $import_day = isset($_POST['import_day']) ? sanitize_text_field($_POST['import_day']) : '';
+    $import_time = isset($_POST['import_time']) ? sanitize_text_field($_POST['import_time']) : '';
 
-if (!$target_group_id || get_post_type($target_group_id) !== 'spa_group' || get_post_status($target_group_id) !== 'publish') {
-    wp_redirect(add_query_arg([
-        'page'  => 'spa-registrations-import',
-        'error' => 'group_not_selected_or_invalid'
-    ], admin_url('edit.php?post_type=spa_registration')));
-    exit;
-}
+    if (empty($import_program) || empty($import_city) || empty($import_day) || empty($import_time)) {
+        wp_redirect(add_query_arg([
+            'page' => 'spa-registrations-import',
+            'error' => 'missing_schedule_params'
+        ], admin_url('edit.php?post_type=spa_registration')));
+        exit;
+    }
+
+    // === NÁJDENIE SKUPINY PODĽA TERMÍNU ===
+    $target_group_id = spa_find_group_by_schedule(
+        $import_program,
+        $import_city,
+        $import_day,
+        $import_time
+    );
+
+    if (!$target_group_id) {
+        $program_title = get_the_title($import_program);
+        $city_title = get_the_title($import_city);
+        $day_labels = [
+            'mo' => 'Pondelok', 'tu' => 'Utorok', 'we' => 'Streda',
+            'th' => 'Štvrtok', 'fr' => 'Piatok', 'sa' => 'Sobota', 'su' => 'Nedeľa'
+        ];
+        
+        $error_params = sprintf(
+            '%s, %s, %s %s',
+            $program_title,
+            $city_title,
+            $day_labels[$import_day] ?? $import_day,
+            $import_time
+        );
+        
+        wp_redirect(add_query_arg([
+            'page' => 'spa-registrations-import',
+            'error' => 'group_not_found',
+            'params' => urlencode($error_params)
+        ], admin_url('edit.php?post_type=spa_registration')));
+        exit;
+    }    
+    
 // === TEMPORARY DEBUG ===
 error_log('SPA IMPORT DEBUG:');
 error_log('Target Group ID: ' . $target_group_id);
