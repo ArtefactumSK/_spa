@@ -306,11 +306,10 @@ function spa_save_import_log($stats) {
     file_put_contents($log_file, $log_content);
 }
 
-
-/**
+//**
  * Nájsť spa_group podľa presného termínu
  * 
- * @param int $program_id ID programu
+ * @param int $program_id ID programu (spa_group)
  * @param int $city_id ID mesta (spa_place)
  * @param string $day Deň (mo, tu, we, ...)
  * @param string $time Čas (HH:MM)
@@ -318,56 +317,41 @@ function spa_save_import_log($stats) {
  */
 function spa_find_group_by_schedule($program_id, $city_id, $day, $time) {
     
-    // Nájsť všetky skupiny pre daný program
-    $groups = get_posts([
-        'post_type' => 'spa_group',
-        'post_status' => 'publish',
-        'posts_per_page' => -1,
-        'meta_query' => [
-            [
-                'key' => 'spa_group_program',
-                'value' => $program_id,
-                'compare' => '='
-            ]
-        ]
-    ]);
+    // Program ID = priamo spa_group ID (nie meta pole)
+    $group = get_post($program_id);
     
-    if (empty($groups)) {
+    if (!$group || $group->post_type !== 'spa_group' || $group->post_status !== 'publish') {
         return false;
     }
     
-    // Filtrovať podľa mesta + rozvrhu
-    foreach ($groups as $group) {
-        $group_place = get_post_meta($group->ID, 'spa_group_place', true);
-        
-        // Kontrola mesta
-        if (intval($group_place) !== intval($city_id)) {
-            continue;
-        }
-        
-        // Kontrola rozvrhu
-        $schedule_days = get_post_meta($group->ID, 'spa_schedule_days', true);
-        $schedule_times = get_post_meta($group->ID, 'spa_schedule_times', true);
-        
-        if (!is_array($schedule_days) || !is_array($schedule_times)) {
-            continue;
-        }
-        
-        // Deň musí byť v rozvrhu
-        if (!in_array($day, $schedule_days)) {
-            continue;
-        }
-        
-        // Kontrola času (±5 minút tolerancia)
-        if (!isset($schedule_times[$day]['from'])) {
-            continue;
-        }
-        
-        $schedule_time = $schedule_times[$day]['from'];
-        
-        if (spa_times_match($schedule_time, $time)) {
-            return $group->ID;
-        }
+    // Kontrola mesta
+    $group_place = get_post_meta($program_id, 'spa_group_place', true);
+    if (intval($group_place) !== intval($city_id)) {
+        return false;
+    }
+    
+    // Kontrola rozvrhu
+    $schedule_days = get_post_meta($program_id, 'spa_schedule_days', true);
+    $schedule_times = get_post_meta($program_id, 'spa_schedule_times', true);
+    
+    if (!is_array($schedule_days) || !is_array($schedule_times)) {
+        return false;
+    }
+    
+    // Deň musí byť v rozvrhu
+    if (!in_array($day, $schedule_days)) {
+        return false;
+    }
+    
+    // Kontrola času (±5 minút tolerancia)
+    if (!isset($schedule_times[$day]['from'])) {
+        return false;
+    }
+    
+    $schedule_time = $schedule_times[$day]['from'];
+    
+    if (spa_times_match($schedule_time, $time)) {
+        return $program_id; // Vrátiť priamo program ID
     }
     
     return false;
