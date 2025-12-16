@@ -17,38 +17,27 @@ error_log('LOADED: spa-import-user-child.php');
 if (!defined('ABSPATH')) {
     exit;
 }
-
 /**
- * NÁJSŤ ALEBO VYTVORIŤ DIEŤA AKO WP_USER
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * FIX2: /includes/import/spa-import-user-child.php
+ * ═══════════════════════════════════════════════════════════════════════════════
  * 
- * Parametre:
- *   @param string $first_name - Meno dieťaťa (povinný)
- *   @param string $last_name - Priezvisko dieťaťa (povinný)
- *   @param string $birthdate - Dátum narodenia (Y-m-d alebo D.M.YYYY)
- *   @param int $parent_user_id - ID rodiča (povinný)
- *   @param string $birth_number - Rodné číslo
- * 
- * Výstup:
- *   @return int|false - User ID dieťaťa alebo false
- * 
- * Logika:
- *   1. Hľadaj dieťa podľa: parent_id + meno + priezvisko
- *   2. Ak nájdeš → vráť ID
- *   3. Ak nie → vytvor nového user s rolou spa_child
- *   4. Email: meno.priezvisko@piaseckyacademy.sk
- *   5. Vygeneruj PIN + VS
- *   6. Ulož všetky povinné user_meta polia
+ * OPRAVY:
+ * 1. ❌ username z "alexia-lendvorska-2023" → "alexia.lendvorska"
+ * 2. ❌ email z "alexia.lendvorska-2@..." → "alexia.lendvorska@piaseckyacademy.sk"
+ * 3. ✅ date_of_birth uloží do user_meta
  */
+
 function spa_import_get_or_create_child($first_name, $last_name, $birthdate = '', $parent_user_id = 0, $birth_number = '') {
-    error_log('IMPORT CHILD: function entered - first=' . $first_name . ', last=' . $last_name . ', parent_id=' . $parent_user_id);
+    error_log('[SPA IMPORT] Child: Entering - first=' . $first_name . ', last=' . $last_name . ', parent_id=' . $parent_user_id);
     
     if (empty($first_name) || empty($last_name)) {
-        error_log('SPA IMPORT ERROR CHILD: Name is empty - first=' . $first_name . ', last=' . $last_name);
+        error_log('[SPA IMPORT] Child ERROR: Name is empty');
         return false;
     }
     
     if (empty($parent_user_id)) {
-        error_log('SPA IMPORT ERROR CHILD: Parent user ID is required');
+        error_log('[SPA IMPORT] Child ERROR: Parent user ID is required');
         return false;
     }
     
@@ -65,10 +54,11 @@ function spa_import_get_or_create_child($first_name, $last_name, $birthdate = ''
             $child_lname = get_user_meta($child->ID, 'last_name', true);
             
             if (strcasecmp($child_fname, $first_name) === 0 && strcasecmp($child_lname, $last_name) === 0) {
-                error_log('SPA IMPORT CHILD: Found existing child user ID ' . $child->ID);
+                error_log('[SPA IMPORT] Child found existing ID=' . $child->ID);
                 
                 if (!empty($birthdate) && empty(get_user_meta($child->ID, 'date_of_birth', true))) {
                     update_user_meta($child->ID, 'date_of_birth', sanitize_text_field($birthdate));
+                    error_log('[SPA IMPORT] Child meta: date_of_birth updated (was empty)');
                 }
                 if (!empty($birth_number) && empty(get_user_meta($child->ID, 'rodne_cislo', true))) {
                     $birth_num_clean = preg_replace('/[^0-9]/', '', $birth_number);
@@ -80,9 +70,8 @@ function spa_import_get_or_create_child($first_name, $last_name, $birthdate = ''
         }
     }
     
-    // 2. VYTVOR NOVÉHO
-    $year = !empty($birthdate) ? date('Y', strtotime($birthdate)) : date('Y');
-    $username_base = sanitize_user(strtolower($first_name . '-' . $last_name . '-' . $year));
+    // 2. VYTVOR NOVÉHO - USERNAME: meno.priezvisko (BEZ ROKU!)
+    $username_base = sanitize_user(strtolower($first_name . '.' . $last_name), true);
     
     $username = $username_base;
     $counter = 1;
@@ -91,7 +80,9 @@ function spa_import_get_or_create_child($first_name, $last_name, $birthdate = ''
         $counter++;
     }
     
-    // 3. EMAIL: meno.priezvisko@piaseckyacademy.sk
+    error_log('[SPA IMPORT] Child username generated: ' . $username);
+    
+    // 3. EMAIL: meno.priezvisko@piaseckyacademy.sk (BEZ SUFFIXU!)
     $email_base = sanitize_user(strtolower($first_name . '.' . $last_name), true);
     $child_email = $email_base . '@piaseckyacademy.sk';
     
@@ -100,6 +91,7 @@ function spa_import_get_or_create_child($first_name, $last_name, $birthdate = ''
     $max_attempts = 100;
     $attempt = 0;
     
+    // Hľadaj unikátny email len ak existuje
     while (email_exists($child_email) && $attempt < $max_attempts) {
         $counter++;
         $child_email = str_replace('@piaseckyacademy.sk', '-' . $counter . '@piaseckyacademy.sk', $email_original);
@@ -107,39 +99,39 @@ function spa_import_get_or_create_child($first_name, $last_name, $birthdate = ''
     }
     
     if ($attempt >= $max_attempts) {
-        error_log('SPA IMPORT ERROR CHILD: Cannot generate unique email after ' . $max_attempts . ' attempts');
+        error_log('[SPA IMPORT] Child ERROR: Cannot generate unique email');
         return false;
     }
     
+    error_log('[SPA IMPORT] Child email generated: ' . $child_email);
+    
     $password = wp_generate_password(32);
     
-    error_log('IMPORT CHILD: Before wp_create_user() - username=' . $username . ', email=' . $child_email);
+    error_log('[SPA IMPORT] Child: Before wp_create_user() - username=' . $username . ', email=' . $child_email);
     
     $child_user_id = wp_create_user($username, $password, $child_email);
     
-    error_log('IMPORT CHILD: After wp_create_user() - result=' . (is_wp_error($child_user_id) ? 'WP_ERROR' : 'user_id=' . $child_user_id));
-    
     if (is_wp_error($child_user_id)) {
-        error_log('SPA IMPORT ERROR CHILD: wp_create_user failed - ' . $child_user_id->get_error_message());
+        error_log('[SPA IMPORT] Child ERROR: wp_create_user failed - ' . $child_user_id->get_error_message());
         return false;
     }
     
     if (!is_numeric($child_user_id) || intval($child_user_id) <= 0) {
-        error_log('SPA IMPORT ERROR CHILD: Invalid user_id returned - ' . var_export($child_user_id, true));
+        error_log('[SPA IMPORT] Child ERROR: Invalid user_id');
         return false;
     }
     
-    // 4. NASTAV ROLE
-    error_log('IMPORT CHILD: Setting role spa_child for user ID ' . $child_user_id);
+    error_log('[SPA IMPORT] Child created user ID=' . $child_user_id);
     
+    // 4. NASTAV ROLE
     $user = new WP_User(intval($child_user_id));
     if (!isset($user->ID) || $user->ID === 0) {
-        error_log('SPA IMPORT ERROR CHILD: Cannot create WP_User object for ID ' . $child_user_id);
+        error_log('[SPA IMPORT] Child ERROR: Cannot load WP_User object');
         return false;
     }
     
     $user->set_role('spa_child');
-    error_log('IMPORT CHILD: Role set successfully');
+    error_log('[SPA IMPORT] Child role set to spa_child');
     
     // 5. NASTAV MENO A DISPLAY NAME
     wp_update_user([
@@ -148,38 +140,42 @@ function spa_import_get_or_create_child($first_name, $last_name, $birthdate = ''
         'last_name' => sanitize_text_field($last_name),
         'display_name' => trim(sanitize_text_field($first_name) . ' ' . sanitize_text_field($last_name))
     ]);
-    error_log('IMPORT CHILD: Display name updated');
+    
+    error_log('[SPA IMPORT] Child display name updated');
     
     // 6. POVINNÉ USER META - PROFIL
     update_user_meta($child_user_id, 'parent_user_id', intval($parent_user_id));
-    error_log('IMPORT CHILD: parent_user_id saved - ' . $parent_user_id);
+    error_log('[SPA IMPORT] Child meta: parent_user_id=' . $parent_user_id);
     
+    // ✅ KRITICKÉ: Ulož date_of_birth
     if (!empty($birthdate)) {
         update_user_meta($child_user_id, 'date_of_birth', sanitize_text_field($birthdate));
-        error_log('IMPORT CHILD: date_of_birth saved - ' . $birthdate);
+        error_log('[SPA IMPORT] Child meta: date_of_birth=' . $birthdate);
+    } else {
+        error_log('[SPA IMPORT] Child WARNING: birthdate is empty!');
     }
     
     if (!empty($birth_number)) {
         $birth_num_clean = preg_replace('/[^0-9]/', '', $birth_number);
         update_user_meta($child_user_id, 'rodne_cislo', $birth_num_clean);
-        error_log('IMPORT CHILD: rodne_cislo saved - ' . $birth_num_clean);
+        error_log('[SPA IMPORT] Child meta: rodne_cislo=' . $birth_num_clean);
     }
     
     update_user_meta($child_user_id, 'health_notes', '');
-    error_log('IMPORT CHILD: health_notes initialized (empty)');
+    error_log('[SPA IMPORT] Child meta: health_notes initialized');
     
     // 7. PIN
     $pin = spa_import_generate_pin();
     update_user_meta($child_user_id, 'spa_pin', spa_import_hash_pin($pin));
     update_user_meta($child_user_id, 'spa_pin_plain', $pin);
-    error_log('IMPORT CHILD: PIN generated and saved - ' . $pin);
+    error_log('[SPA IMPORT] Child meta: PIN=' . $pin);
     
     // 8. VARIABILNÝ SYMBOL
     $vs = spa_import_generate_variabilny_symbol();
     update_user_meta($child_user_id, 'variabilny_symbol', $vs);
-    error_log('IMPORT CHILD: VS generated and saved - ' . $vs);
+    error_log('[SPA IMPORT] Child meta: VS=' . $vs);
     
-    error_log('SPA IMPORT CHILD: SUCCESS - Created user ID ' . $child_user_id . ' | name=' . $first_name . ' ' . $last_name . ' | parent_id=' . $parent_user_id . ' | email=' . $child_email . ' | PIN=' . $pin . ' | VS=' . $vs);
+    error_log('[SPA IMPORT] Child SUCCESS: ID=' . $child_user_id . ' | name=' . $first_name . ' ' . $last_name . ' | email=' . $child_email . ' | parent=' . $parent_user_id);
     
     return intval($child_user_id);
 }
