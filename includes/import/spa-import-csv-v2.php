@@ -175,8 +175,9 @@ function spa_find_or_create_child_from_csv($row_data) {
         return false;
     }
 
-    error_log('DEBUG: Looking for child - meno=' . $meno . ', priezvisko=' . $priezvisko . ', datum=' . $datum_narodenia);
+            error_log('DEBUG: Looking for child - meno=' . $meno . ', priezvisko=' . $priezvisko . ', datum=' . $datum_narodenia);
 
+    // Dieťa je POST - len pre info, klient je USER
     $existing_child = new WP_Query([
         'post_type' => 'sp_dieta',
         'post_status' => 'publish',
@@ -201,6 +202,7 @@ function spa_find_or_create_child_from_csv($row_data) {
         return $existing_child->posts[0]->ID;
     }
 
+    // Vytvor nové dieťa (POST)
     $child_id = wp_insert_post([
         'post_type' => 'sp_dieta',
         'post_title' => $meno . ' ' . $priezvisko,
@@ -222,6 +224,66 @@ function spa_find_or_create_child_from_csv($row_data) {
     error_log('DEBUG: Created child ID ' . $child_id . ' - ' . $meno . ' ' . $priezvisko);
 
     return $child_id;
+}
+
+/**
+ * Nájsť alebo vytvoriť WORDPRESS USER pre rodiča
+ * (NIE POST, ale skutočný WP user!)
+ */
+function spa_get_or_create_parent_user($email, $first_name, $last_name, $phone = '') {
+    if (empty($email)) {
+        error_log('ERROR: Cannot create parent user without email');
+        return false;
+    }
+    
+    // Skontroluj či user už existuje
+    $existing_user = get_user_by('email', $email);
+    
+    if ($existing_user) {
+        error_log('DEBUG: Found existing parent user ID ' . $existing_user->ID . ' for email ' . $email);
+        // Aktualizuj metadata
+        update_user_meta($existing_user->ID, 'first_name', $first_name);
+        update_user_meta($existing_user->ID, 'last_name', $last_name);
+        if (!empty($phone)) {
+            update_user_meta($existing_user->ID, 'phone', $phone);
+        }
+        return $existing_user->ID;
+    }
+    
+    // Vytvor nového WP user
+    $username = sanitize_user(strtolower($first_name . '.' . $last_name));
+    
+    // Zabezpeč unique username
+    $base_username = $username;
+    $counter = 1;
+    while (username_exists($username)) {
+        $username = $base_username . $counter;
+        $counter++;
+    }
+    
+    $password = wp_generate_password(16, true);
+    
+    $user_id = wp_create_user($username, $password, $email);
+    
+    if (is_wp_error($user_id)) {
+        error_log('ERROR: Failed to create parent user: ' . $user_id->get_error_message());
+        return false;
+    }
+    
+    // Nastav role
+    $user = new WP_User($user_id);
+    $user->set_role('spa_parent');
+    
+    // Ulož metadata
+    update_user_meta($user_id, 'first_name', $first_name);
+    update_user_meta($user_id, 'last_name', $last_name);
+    if (!empty($phone)) {
+        update_user_meta($user_id, 'phone', $phone);
+    }
+    
+    error_log('DEBUG: Created parent user ID ' . $user_id . ' with email ' . $email . ', username ' . $username);
+    
+    return $user_id;
 }
 
 /**
@@ -600,14 +662,65 @@ function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '
         
         // === VYTVORENIE REÁLNEJ REGISTRÁCIE ===
         
-        // 1. Nájsť/vytvoriť rodiča
-        $parent_id = spa_find_or_create_parent_from_csv($row_data);
-        if (!$parent_id) {
+        // 1. Nájsť/vytvoriť rodiča ako WP USER
+        $parent_email = '';
+        $parent_name = '';
+        $parent_surname = '';
+        $parent_phone = '';
+        
+        // Ziskaj email z riadku (väčšinou index 30)
+        for ($i = 0; $i < count($row); $i++) {
+            $value = $row[$i] ?? '';
+            if (!empty($value) && filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                $parent_email = sanitize_email($value);
+                // Meno je väčšinou za emailom (index 31)
+                for ($j = $i + 1; $j < count($row) && empty($parent_name); $j++) {
+                    $val = trim($row[$j] ?? '');
+                    if (!empty($val) && !filter_var($val, FILTER_VALIDATE_EMAIL) && strlen($val) < 50) {
+                        $parent_name = sanitize_text_field($val);
+                    }
+                }
+                // Priezvisko je za menom (index 32)
+                for ($j = $i + 2; $j < count($row) && empty($parent_surname); $j++) {
+                    $val = trim($row[$j] ?? '');
+                    if (!empty($val) && !filter_var($val, FILTER_VALIDATE_EMAIL) && strlen($val) < 50 && $val !== $parent_name) {
+                        $parent_surname = sanitize_text_field($val);
+                    }
+                }
+                // Telefón
+                for ($j = $i + 3; $j < count($row) && empty($parent_phone); $j++) {
+                    $val = trim($row[$j] ?? '');
+                    if (!empty($val) && preg_match('/^[0-9\+\-\s]{9,}$/', $val)) {
+                        $parent_phone = sanitize_text_field($val);
+                    }
+                }
+                break;
+            }
+        }
+        
+        if (empty($parent_email)) {
             $import_stats['errors']++;
-            $import_stats['error_log'][] = 'Chyba vytvorenia rodiča na riadku ' . $row_number;
-            error_log('ERROR: Failed to create parent for row ' . $row_number);
+            $import_stats['error_log'][] = 'Chyba: Nenájdený email rodiča na riadku ' . $row_number;
+            error_log('ERROR: No parent email found for row ' . $row_number);
             continue;
         }
+        
+        // Vytvor WP user pre rodiča
+        $parent_user_id = spa_get_or_create_parent_user(
+            $parent_email, 
+            $parent_name ?: 'Rodič', 
+            $parent_surname ?: 'Import', 
+            $parent_phone
+        );
+        
+        if (!$parent_user_id) {
+            $import_stats['errors']++;
+            $import_stats['error_log'][] = 'Chyba vytvorenia rodiča na riadku ' . $row_number;
+            error_log('ERROR: Failed to create parent user for row ' . $row_number);
+            continue;
+        }
+        
+        error_log('DEBUG: Created/Found parent user ID ' . $parent_user_id . ' for email ' . $parent_email);
         
         // 2. Nájsť/vytvoriť dieťa
         $child_id = spa_find_or_create_child_from_csv($row_data);
@@ -617,9 +730,7 @@ function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '
             error_log('ERROR: Failed to create child for row ' . $row_number);
             continue;
         }
-        
-        // 3. Prepojiť rodiča a dieťa
-        spa_link_parent_child($parent_id, $child_id);
+
         
         // 4. Vytvor REÁLNU registráciu s client_user_id a parent_user_id
         $registration_title = get_the_title($child_id) . ' - ' . get_the_title($target_group_id);
@@ -663,7 +774,35 @@ function spa_process_single_csv($file_path, $filename, $city = '', $zip_name = '
             update_post_meta($registration_id, 'variable_symbol', sanitize_text_field($row_data['variabilný symbol']));
         }
         
-        error_log('CREATED: Registration ID ' . $registration_id . ' for row ' . $row_number . ' (parent=' . $parent_id . ', child=' . $child_id . ')');
+        error_log('DEBUG: About to save meta for registration ' . intval($registration_id) . ' with parent_user_id=' . intval($parent_user_id) . ', client_user_id=' . intval($child_id));
+
+        $meta1 = update_post_meta($registration_id, 'client_user_id', intval($child_id));
+        error_log('DEBUG: update_post_meta client_user_id result: ' . var_export($meta1, true));
+        
+        $meta2 = update_post_meta($registration_id, 'parent_user_id', intval($parent_user_id));
+        error_log('DEBUG: update_post_meta parent_user_id result: ' . var_export($meta2, true));
+        
+        $meta3 = update_post_meta($registration_id, 'spa_group_id', intval($target_group_id));
+        $meta4 = update_post_meta($registration_id, 'registration_day', sanitize_text_field($_POST['import_day'] ?? ''));
+        $meta5 = update_post_meta($registration_id, 'registration_time', sanitize_text_field($_POST['import_time'] ?? ''));
+        $meta6 = update_post_meta($registration_id, 'import_source', 'csv');
+        $meta7 = update_post_meta($registration_id, 'import_filename', $filename);
+        $meta8 = update_post_meta($registration_id, 'import_timestamp', current_time('mysql'));
+        $meta9 = update_post_meta($registration_id, 'status', 'active');
+        
+        error_log('DEBUG: All meta saved - spa_group_id=' . var_export($meta3, true) . ', day=' . var_export($meta4, true) . ', time=' . var_export($meta5, true));
+        
+        // Voliteľné meta
+        if (!empty($row_data['predvolená suma'])) {
+            $price = floatval(str_replace(',', '.', $row_data['predvolená suma']));
+            update_post_meta($registration_id, 'registration_price', $price);
+        }
+        
+        if (!empty($row_data['variabilný symbol'])) {
+            update_post_meta($registration_id, 'variable_symbol', sanitize_text_field($row_data['variabilný symbol']));
+        }
+        
+        error_log('CREATED: Registration ID ' . $registration_id . ' for row ' . $row_number . ' (parent_user_id=' . intval($parent_user_id) . ', child=' . intval($child_id) . ', day=' . sanitize_text_field($_POST['import_day'] ?? 'N/A') . ', time=' . sanitize_text_field($_POST['import_time'] ?? 'N/A') . ')');
         
         $import_stats['success']++;
     }
