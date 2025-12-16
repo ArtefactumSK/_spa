@@ -1,0 +1,10 @@
+{
+    "workbench.colorCustomizations": {
+        "[Artefactum]": {
+            "editor.background": "#ff6600", "editor.foreground": "#ffffff"
+        }
+    },
+    "editor.semanticTokenColorCustomizations": {
+
+    }
+}
