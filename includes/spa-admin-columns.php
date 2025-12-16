@@ -125,24 +125,24 @@ function spa_registration_column_content($column, $post_id) {
             break;
 
         case 'schedule':
-            // Meta keys: registration_day (napr. "tu") a registration_time (napr. "10:00")
-            $day = get_post_meta($post_id, 'registration_day', true);
-            $time = get_post_meta($post_id, 'registration_time', true);
+            // Meta keys: training_day a training_time
+            $day = get_post_meta($post_id, 'training_day', true);
+            $time = get_post_meta($post_id, 'training_time', true);
             
             if (!empty($day) && !empty($time)) {
                 // Mapovanie krátkych kódov na slovenské dni
                 $days_map = array(
-                    'mo' => 'Pondelok',
-                    'tu' => 'Utorok',
-                    'we' => 'Streda',
-                    'th' => 'Štvrtok',
-                    'fr' => 'Piatok',
-                    'sa' => 'Sobota',
-                    'su' => 'Nedeľa'
+                    'mo' => 'Po',
+                    'tu' => 'Ut',
+                    'we' => 'St',
+                    'th' => 'Št',
+                    'fr' => 'Pi',
+                    'sa' => 'So',
+                    'su' => 'Ne'
                 );
                 
                 $day_name = isset($days_map[strtolower($day)]) ? $days_map[strtolower($day)] : $day;
-                echo esc_html($day_name . ' ' . $time);
+                echo '<strong>' . esc_html($day_name) . '</strong> ' . esc_html($time);
             } else {
                 echo '<span style="color:#999;">—</span>';
             }
