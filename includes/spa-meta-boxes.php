@@ -524,3 +524,210 @@ function spa_group_pricing_save($post_id, $post) {
         update_post_meta($post_id, 'spa_pricing_seasons', $pricing_seasons);
     }
 }
+/* ============================================================
+   META BOX: DETAILY REGISTRÁCIE (spa_registration)
+   ============================================================ */
+
+function spa_registration_meta_box($post) {
+    wp_nonce_field('spa_save_registration', 'spa_registration_nonce');
+    
+    // Ziskaj meta údaje
+    $parent_user_id = get_post_meta($post->ID, 'parent_user_id', true);
+    $client_user_id = get_post_meta($post->ID, 'client_user_id', true);
+    $spa_group_id = get_post_meta($post->ID, 'spa_group_id', true);
+    $registration_day = get_post_meta($post->ID, 'registration_day', true);
+    $registration_time = get_post_meta($post->ID, 'registration_time', true);
+    $status = get_post_meta($post->ID, 'status', true);
+    $variable_symbol = get_post_meta($post->ID, 'variable_symbol', true);
+    $pin = get_post_meta($post->ID, 'pin', true);
+    
+    // Načítaj dostupné programy
+    $programs = get_posts([
+        'post_type' => 'spa_group',
+        'posts_per_page' => -1,
+        'orderby' => 'title',
+        'order' => 'ASC'
+    ]);
+    
+    // Načítaj dostupných rodičov
+    $parents = get_users(['role' => 'spa_parent', 'orderby' => 'display_name']);
+    
+    // Načítaj dostupné deti
+    $children = get_users(['role' => 'spa_child', 'orderby' => 'display_name']);
+    
+    // Mapy dní a statusov
+    $days_map = [
+        'mo' => 'Pondelok',
+        'tu' => 'Utorok',
+        'we' => 'Streda',
+        'th' => 'Štvrtok',
+        'fr' => 'Piatok',
+        'sa' => 'Sobota',
+        'su' => 'Nedeľa'
+    ];
+    
+    $statuses = [
+        'pending' => 'Čaká na schválenie',
+        'awaiting_payment' => 'Čaká na platbu',
+        'partially_paid' => 'Čiastočne zaplatené',
+        'approved' => 'Schválené',
+        'active' => 'Aktívny',
+        'blocked' => 'Blokované',
+        'cancelled' => 'Zrušené',
+        'completed' => 'Zaregistrované'
+    ];
+    
+    ?>
+    <style>
+    .spa-meta-row { display: flex; margin-bottom: 15px; align-items: flex-start; }
+    .spa-meta-row label { width: 150px; font-weight: 600; padding-top: 8px; }
+    .spa-meta-row .spa-field { flex: 1; }
+    .spa-meta-row input[type="text"], .spa-meta-row input[type="time"], .spa-meta-row select { width: 100%; max-width: 400px; padding: 8px; }
+    .spa-help { color: #666; font-size: 12px; margin-top: 4px; }
+    .spa-info { background: #e7f3ff; padding: 10px; border-left: 3px solid #0073aa; margin-bottom: 15px; }
+    .spa-info strong { display: block; margin-bottom: 5px; }
+    </style>
+    
+    <div class="spa-info">
+        <strong>👶 Dieťa/Klient:</strong>
+        <?php 
+        if ($client_user_id) {
+            $child = get_userdata($client_user_id);
+            if ($child) {
+                echo esc_html($child->first_name . ' ' . $child->last_name . ' (' . $child->user_email . ')');
+            } else {
+                echo '<span style="color:red;">Neznáme ID: ' . intval($client_user_id) . '</span>';
+            }
+        } else {
+            echo '<span style="color:red;">Nie je nastavené</span>';
+        }
+        ?>
+    </div>
+    
+    <div class="spa-meta-row">
+        <label for="spa_parent_id">👨‍👩‍👧 Rodič:</label>
+        <div class="spa-field">
+            <select name="spa_parent_id" id="spa_parent_id">
+                <option value="">-- Vyberte rodiča --</option>
+                <?php foreach ($parents as $parent) : ?>
+                    <option value="<?php echo $parent->ID; ?>" <?php selected($parent_user_id, $parent->ID); ?>>
+                        <?php echo esc_html($parent->first_name . ' ' . $parent->last_name . ' (' . $parent->user_email . ')'); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <p class="spa-help">Vyberte alebo zmeňte rodiča</p>
+        </div>
+    </div>
+    
+    <div class="spa-meta-row">
+        <label for="spa_group_id">🏋️ Program:</label>
+        <div class="spa-field">
+            <select name="spa_group_id" id="spa_group_id">
+                <option value="">-- Vyberte program --</option>
+                <?php foreach ($programs as $program) : ?>
+                    <option value="<?php echo $program->ID; ?>" <?php selected($spa_group_id, $program->ID); ?>>
+                        <?php echo esc_html($program->post_title); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <p class="spa-help">Zmeňte tréningový program</p>
+        </div>
+    </div>
+    
+    <div class="spa-meta-row">
+        <label for="spa_day">⏰ Deň v týždni:</label>
+        <div class="spa-field">
+            <select name="spa_day" id="spa_day">
+                <option value="">-- Vyberte deň --</option>
+                <?php foreach ($days_map as $key => $label) : ?>
+                    <option value="<?php echo $key; ?>" <?php selected($registration_day, $key); ?>>
+                        <?php echo esc_html($label); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <p class="spa-help">Zmeňte deň tréningu</p>
+        </div>
+    </div>
+    
+    <div class="spa-meta-row">
+        <label for="spa_time">🕐 Čas:</label>
+        <div class="spa-field">
+            <input type="time" name="spa_time" id="spa_time" value="<?php echo esc_attr($registration_time); ?>">
+            <p class="spa-help">Zmeňte čas začiatku tréningu</p>
+        </div>
+    </div>
+    
+    <div class="spa-meta-row">
+        <label for="spa_vs">🔢 Variabilný symbol:</label>
+        <div class="spa-field">
+            <input type="text" name="spa_vs" id="spa_vs" value="<?php echo esc_attr($variable_symbol); ?>" placeholder="napr. 0123">
+            <p class="spa-help">Bankovný variabilný symbol pre platby</p>
+        </div>
+    </div>
+    
+    <div class="spa-meta-row">
+        <label for="spa_status">📊 Status:</label>
+        <div class="spa-field">
+            <select name="spa_status" id="spa_status">
+                <option value="">-- Vyberte status --</option>
+                <?php foreach ($statuses as $key => $label) : ?>
+                    <option value="<?php echo $key; ?>" <?php selected($status, $key); ?>>
+                        <?php echo esc_html($label); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <p class="spa-help">Aktuálny stav registrácie</p>
+        </div>
+    </div>
+    
+    <?php
+}
+
+/* ============================================================
+   SAVE META BOX: REGISTRÁCIA
+   ============================================================ */
+
+add_action('save_post_spa_registration', 'spa_save_registration_meta', 11, 2);
+
+function spa_save_registration_meta($post_id, $post) {
+    if (!isset($_POST['spa_registration_nonce'])) {
+        return;
+    }
+    
+    if (!wp_verify_nonce($_POST['spa_registration_nonce'], 'spa_save_registration')) {
+        return;
+    }
+    
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+    
+    // Ulož meta
+    if (isset($_POST['spa_parent_id'])) {
+        update_post_meta($post_id, 'parent_user_id', intval($_POST['spa_parent_id']));
+    }
+    
+    if (isset($_POST['spa_group_id'])) {
+        update_post_meta($post_id, 'spa_group_id', intval($_POST['spa_group_id']));
+    }
+    
+    if (isset($_POST['spa_day'])) {
+        update_post_meta($post_id, 'registration_day', sanitize_text_field($_POST['spa_day']));
+    }
+    
+    if (isset($_POST['spa_time'])) {
+        update_post_meta($post_id, 'registration_time', sanitize_text_field($_POST['spa_time']));
+    }
+    
+    if (isset($_POST['spa_vs'])) {
+        update_post_meta($post_id, 'variable_symbol', sanitize_text_field($_POST['spa_vs']));
+    }
+    
+    if (isset($_POST['spa_status'])) {
+        update_post_meta($post_id, 'status', sanitize_text_field($_POST['spa_status']));
+    }
+}
