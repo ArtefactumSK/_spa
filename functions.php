@@ -137,6 +137,9 @@ spa_load_module('user/spa-user-clients.php');
 // spa_load_module('registration/spa-registration-notifications.php');
 spa_load_module('registration/spa-registration-form.php');
 
+spa_load_module('admin/spa-registration-meta-box.php');
+spa_load_module('admin/spa-registration-admin-columns.php');
+
 // FÁZA 4: IMPORT CSV V2
 spa_load_module('import/spa-import-csv-v2.php');
 
@@ -149,6 +152,7 @@ spa_load_module('import/spa-import-csv-v2.php');
    ========================== */
 spa_load_module('spa-meta-boxes.php');      // ← Zakomentuj starý
 spa_load_module('spa-admin-columns.php');   // ← KRITICKÉ! (Admin columns)
+spa_load_module('spa-user-profile-fields.php'); 
 
 
 /* ==========================
