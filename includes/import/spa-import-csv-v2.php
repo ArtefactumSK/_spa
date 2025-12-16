@@ -1,17 +1,40 @@
 <?php
 /**
- * CSV Import Handler v2 - OPRAVENÁ VERZIA
+ * CSV Import Handler v2 - ORCHESTRÁTOR
  * 
- * KRITICKÉ OPRAVY:
- * 1. Vytvárame WP_USERS pre RODIČA (spa_parent) aj DIEŤA (spa_child)
- * 2. Email dieťaťa: meno.priezvisko@piaseckyacademy.sk
- * 3. Registrácia: vytvára meta client_user_id, parent_user_id, program_id
- * 4. Priradenie: Rodič + Dieťa + Program + Deň + Čas + VS
+ * ROLE:
+ * - Načíta CSV súbor
+ * - Extrahuje údaje z riadkov
+ * - Volá import helpery:
+ *   * spa-import-user-parent.php
+ *   * spa-import-user-child.php
+ *   * spa-import-registration.php
+ * - Spracúva chyby
+ * - Vracia štatistiku
+ * 
+ * ŽIADNE: priame vytvorenie userov / registrácií
+ * (všetko delegované na helpery)
+ * 
+ * @package Samuel Piasecký ACADEMY
+ * @subpackage Import
+ * @version 2.0.0
  */
+
+error_log('SPA IMPORT ENTRY POINT HIT');
+
 
 if (!defined('ABSPATH')) {
     exit;
 }
+
+
+// LOAD SHARED HELPERS (MUSÍ BYŤ PRVÝ!)
+require_once SPA_INCLUDES . 'import/spa-import-helpers.php';
+
+// LOAD IMPORT HELPERY
+require_once SPA_INCLUDES . 'import/spa-import-user-parent.php';
+require_once SPA_INCLUDES . 'import/spa-import-user-child.php';
+require_once SPA_INCLUDES . 'import/spa-import-registration.php';
 
 /**
  * NÁJSŤ ALEBO VYTVORIŤ RODIČA AKO WP_USER
@@ -380,8 +403,7 @@ function spa_process_single_csv($file_path, $filename, $target_group_id = 0, $tr
         
         // === VYTVORENIE REGISTRÁCIE ===
         $child_name = get_user_meta($child_user_id, 'first_name', true) . ' ' . get_user_meta($child_user_id, 'last_name', true);
-        $group_name = get_the_title($target_group_id);
-        $registration_title = trim($child_name) . ' - ' . $group_name;
+        $registration_title = trim($child_name);
         
         $registration_id = wp_insert_post([
             'post_type' => 'spa_registration',
