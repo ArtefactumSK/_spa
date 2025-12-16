@@ -38,6 +38,7 @@ if (!defined('ABSPATH')) {
 function spa_import_get_or_create_parent($email, $first_name = '', $last_name = '', $phone = '') {
     error_log('IMPORT PARENT: function entered');
     
+    
     if (empty($email)) {
         error_log('SPA IMPORT ERROR: Parent email is empty');
         return false;
@@ -100,6 +101,11 @@ function spa_import_get_or_create_parent($email, $first_name = '', $last_name = 
     
     error_log('SPA IMPORT: Created parent user ID ' . $user_id . ' with email ' . $email);
     error_log('IMPORT PARENT: about to create user with email: ' . $email);
+    error_log('[SPA IMPORT][PARENT] FUNCTION START');
+    error_log('[SPA IMPORT][PARENT] EMAIL: ' . $email);
+    error_log('[SPA IMPORT][PARENT] USER EXISTS: ' . ($existing ? 'YES' : 'NO'));
+    error_log('[SPA IMPORT][PARENT] CREATE RESULT: ' . print_r($user_id, true));
+
     
     return $user_id;
 }
