@@ -127,6 +127,8 @@ function spa_extract_csv_row_data($row) {
  */
 function spa_process_single_csv($file_path, $filename, $target_group_id = 0, $training_day = '', $training_time = '') {
     
+    error_log('CSV_PROCESS: FUNCTION ENTERED - file_path=' . $file_path . ', filename=' . $filename . ', target_group_id=' . $target_group_id);
+    
     $stats = [
         'success' => 0,
         'errors' => 0,
@@ -134,24 +136,32 @@ function spa_process_single_csv($file_path, $filename, $target_group_id = 0, $tr
         'error_log' => []
     ];
     
+    error_log('CSV_PROCESS: About to fopen - file_path=' . $file_path);
     $handle = fopen($file_path, 'r');
+    error_log('CSV_PROCESS: After fopen - handle=' . (is_resource($handle) ? 'RESOURCE' : var_export($handle, true)));
     
     if ($handle === false) {
+        error_log('ERROR CSV_PROCESS: fopen() returned false - file_path=' . $file_path);
         $stats['errors']++;
         $stats['error_log'][] = 'ERROR: Chyba pri otvorení súboru: ' . $filename;
-        error_log('ERROR CSV: Cannot open file: ' . $filename);
         return $stats;
     }
+    
+    error_log('CSV_PROCESS: fopen() SUCCESS, reading header');
     
     // Preskočí header
     $header = fgetcsv($handle, 0, ';', '"');
+    error_log('CSV_PROCESS: After fgetcsv header - header=' . (is_array($header) ? 'ARRAY[' . count($header) . ']' : var_export($header, true)));
+    
     if (!$header) {
+        error_log('ERROR CSV_PROCESS: fgetcsv() returned false or empty - cannot read header');
         $stats['errors']++;
         $stats['error_log'][] = 'ERROR: Súbor je prázdny';
-        error_log('ERROR CSV: File is empty: ' . $filename);
         fclose($handle);
         return $stats;
     }
+    
+    error_log('CSV_PROCESS: Header parsed successfully, header fields: ' . json_encode($header));
     
     $row_number = 1;
     
@@ -263,30 +273,69 @@ function spa_process_csv_import() {
     error_log('=== SPA CSV IMPORT START ===');
     
     if (!current_user_can('manage_options')) {
+        error_log('ERROR IMPORT: User does not have manage_options capability');
         wp_die('Nemáte oprávnenie');
     }
+    error_log('IMPORT_CHECK: current_user_can(manage_options) = TRUE');
     
     if (!isset($_POST['spa_csv_import_nonce']) || !wp_verify_nonce($_POST['spa_csv_import_nonce'], 'spa_csv_import')) {
+        error_log('ERROR IMPORT: Nonce check failed - nonce_isset=' . (isset($_POST['spa_csv_import_nonce']) ? 'yes' : 'no'));
         wp_die('Security check failed');
     }
+    error_log('IMPORT_CHECK: Nonce verification = PASS');
     
     $target_group_id = isset($_POST['import_group_id']) ? intval($_POST['import_group_id']) : 0;
     $training_day = isset($_POST['import_day']) ? sanitize_text_field($_POST['import_day']) : '';
     $training_time = isset($_POST['import_time']) ? sanitize_text_field($_POST['import_time']) : '';
     
-    if (!$target_group_id || get_post_type($target_group_id) !== 'spa_group') {
+    error_log('IMPORT_CHECK: target_group_id=' . $target_group_id . ', training_day=' . $training_day . ', training_time=' . $training_time);
+    
+    if (!$target_group_id) {
+        error_log('ERROR IMPORT: target_group_id is empty or 0');
         wp_die('Neplatný program');
     }
     
-    if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+    $post_type = get_post_type($target_group_id);
+    error_log('IMPORT_CHECK: get_post_type(' . $target_group_id . ') = ' . ($post_type ? $post_type : 'false/null'));
+    
+    if ($post_type !== 'spa_group') {
+        error_log('ERROR IMPORT: Post type is not spa_group, got: ' . var_export($post_type, true));
+        wp_die('Neplatný program');
+    }
+    error_log('IMPORT_CHECK: post_type = spa_group PASS');
+    
+    if (!isset($_FILES['csv_file'])) {
+        error_log('ERROR IMPORT: $_FILES[csv_file] is NOT SET');
         wp_die('Chyba pri nahrávaní súboru');
     }
+    error_log('IMPORT_CHECK: $_FILES[csv_file] EXISTS');
+    
+    if ($_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+        error_log('ERROR IMPORT: File upload error code = ' . $_FILES['csv_file']['error']);
+        wp_die('Chyba pri nahrávaní súboru');
+    }
+    error_log('IMPORT_CHECK: File upload error = UPLOAD_ERR_OK');
+    
+    if (empty($_FILES['csv_file']['tmp_name'])) {
+        error_log('ERROR IMPORT: tmp_name is empty - $_FILES[csv_file][tmp_name]=' . var_export($_FILES['csv_file']['tmp_name'], true));
+        wp_die('Chyba pri nahrávaní súboru');
+    }
+    error_log('IMPORT_CHECK: tmp_name is NOT empty = ' . $_FILES['csv_file']['tmp_name']);
     
     $file_path = $_FILES['csv_file']['tmp_name'];
     $filename = $_FILES['csv_file']['name'];
     
+    error_log('IMPORT_CHECK: file_path=' . $file_path . ', filename=' . $filename);
+    
+    if (!file_exists($file_path)) {
+        error_log('ERROR IMPORT: File does not exist at path: ' . $file_path);
+        wp_die('Súbor sa nenašiel');
+    }
+    error_log('IMPORT_CHECK: file_exists(' . $file_path . ') = TRUE');
+    
     $stats = spa_process_single_csv($file_path, $filename, $target_group_id, $training_day, $training_time);
     
+    error_log('IMPORT_CHECK: spa_process_single_csv() returned - stats=' . json_encode($stats));
     error_log('=== SPA CSV IMPORT COMPLETE ===');
     
     wp_redirect(add_query_arg([
@@ -299,4 +348,7 @@ function spa_process_csv_import() {
     exit;
 }
 
-add_action('admin_post_spa_import_csv', 'spa_process_csv_import');
+// HOOK REGISTRÁCIA - NECH JE NA KONCI SÚBORU
+if (!has_action('admin_post_spa_import_csv')) {
+    add_action('admin_post_spa_import_csv', 'spa_process_csv_import', 10);
+}
