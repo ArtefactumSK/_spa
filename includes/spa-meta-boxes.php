@@ -35,6 +35,7 @@ function spa_registration_details_callback($post) {
     $parent_id = get_post_meta($post->ID, 'parent_user_id', true);
     $program_id = get_post_meta($post->ID, 'spa_group_id', true);
     $training_day = get_post_meta($post->ID, 'training_day', true);
+    error_log('[SPA DEBUG] Registration ID=' . $post->ID . ' | training_day meta=' . $training_day);
     $training_time = get_post_meta($post->ID, 'training_time', true);
     $status = get_post_meta($post->ID, 'status', true);
     $variable_symbol = get_post_meta($post->ID, 'variable_symbol', true);

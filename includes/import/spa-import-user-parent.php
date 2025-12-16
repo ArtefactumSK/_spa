@@ -57,8 +57,16 @@ function spa_import_get_or_create_parent($email, $first_name = '', $last_name = 
     }
     
     // 2. VYTVOR NOVÉHO
-    $username = spa_import_generate_username_from_email($email);
-    $password = wp_generate_password(16, true);
+    /* $username = spa_import_generate_username_from_email($email);
+    $password = wp_generate_password(16, true); */
+    // Vygeneruj username: meno.priezvisko
+        $username_base = sanitize_user(strtolower($first_name . '.' . $last_name), true);
+        $username = $username_base;
+        $counter = 1;
+        while (username_exists($username)) {
+            $username = $username_base . '-' . $counter;
+            $counter++;
+        }
     
     error_log('[SPA IMPORT] Parent: Creating new - username=' . $username . ' email=' . $email);
     

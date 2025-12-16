@@ -166,20 +166,21 @@ function spa_process_single_csv($file_path, $filename, $target_group_id = 0, $tr
         error_log('[SPA IMPORT] CSV_ROW ' . $row_number . ' Parent ID=' . $parent_user_id);
         
         // Ulož adresu rodiča ODDELENE
-        if (!empty($data['parent_street'])) {
-            update_user_meta($parent_user_id, 'address', $data['parent_street']);
-            error_log('[SPA IMPORT] Parent meta: address=' . $data['parent_street']);
-        }
-        
-        if (!empty($data['parent_city'])) {
-            update_user_meta($parent_user_id, 'city', $data['parent_city']);
-            error_log('[SPA IMPORT] Parent meta: city=' . $data['parent_city']);
-        }
-        
-        if (!empty($data['parent_psc'])) {
-            update_user_meta($parent_user_id, 'psc', $data['parent_psc']);
-            error_log('[SPA IMPORT] Parent meta: psc=' . $data['parent_psc']);
-        }
+        // Ulož adresu rodiča ODDELENE
+            if (!empty($data['parent_street'])) {
+                update_user_meta($parent_user_id, 'address', $data['parent_street']);
+                error_log('[SPA IMPORT] Parent meta: address=' . $data['parent_street']);
+            }
+
+            if (!empty($data['parent_city'])) {
+                update_user_meta($parent_user_id, 'city', $data['parent_city']);
+                error_log('[SPA IMPORT] Parent meta: city=' . $data['parent_city']);
+            }
+
+            if (!empty($data['parent_psc'])) {
+                update_user_meta($parent_user_id, 'psc', $data['parent_psc']);
+                error_log('[SPA IMPORT] Parent meta: psc=' . $data['parent_psc']);
+            }
         
         // === 2. VYTVORENIE DETSKÉHO WP_USER ===
         error_log('[SPA IMPORT] CSV_ROW ' . $row_number . ': Creating child');
