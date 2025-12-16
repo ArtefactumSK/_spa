@@ -18,34 +18,39 @@ if (!defined('ABSPATH')) {
 add_filter('manage_spa_registration_posts_columns', 'spa_cpt_registration_columns');
 function spa_cpt_registration_columns($columns) {
     return array(
-        'cb'      => $columns['cb'],
-        'title'   => 'Názov',
-        'child'   => '👶 Dieťa/Klient',
-        'program' => '🤸 Program',
-        'parent'  => '👨‍👩‍👧 Rodič',
-        'vs'      => 'VS',
-        'status'  => 'Status',
-        'date'    => 'Dátum'
+        'cb'        => $columns['cb'],
+        'title'     => 'Názov',
+        'child'     => '👶 Dieťa/Klient',
+        'program'   => '🏋️ Program',
+        'parent'    => '👨‍👩‍👧 Rodič',
+        'vs'        => '🔢 VS',
+        'pin'       => '🔐 PIN',
+        'schedule'  => '⏰ Rozvrh',
+        'status'    => '📊 Status',
+        'date'      => 'Dátum'
     );
 }
 
 add_action('manage_spa_registration_posts_custom_column', 'spa_registration_column_content', 10, 2);
 function spa_registration_column_content($column, $post_id) {
     
-    $client_id = get_post_meta($post_id, 'client_user_id', true);
-    $program_id = get_post_meta($post_id, 'program_id', true);
-    $parent_id = get_post_meta($post_id, 'parent_user_id', true);
-    $status = get_post_meta($post_id, 'status', true);
-
     switch ($column) {
         
         case 'child':
-            if ($client_id) {
-                $user = get_userdata($client_id);
+            // Meta key: client_user_id (bolo child_user_id, teraz je client_user_id)
+            $client_id = get_post_meta($post_id, 'client_user_id', true);
+            
+            if (!empty($client_id)) {
+                $user = get_userdata(intval($client_id));
                 if ($user) {
                     $name = trim($user->first_name . ' ' . $user->last_name);
-                    if (empty($name)) $name = $user->display_name;
-                    echo '<a href="' . esc_url(get_edit_user_link($client_id)) . '">' . esc_html($name) . '</a>';
+                    if (empty($name)) {
+                        $name = $user->display_name;
+                    }
+                    if (empty($name)) {
+                        $name = $user->user_login;
+                    }
+                    echo '<a href="' . esc_url(get_edit_user_link($user->ID)) . '">' . esc_html($name) . '</a>';
                 } else {
                     echo '<span style="color:#999;">—</span>';
                 }
@@ -55,10 +60,13 @@ function spa_registration_column_content($column, $post_id) {
             break;
 
         case 'program':
-            if ($program_id) {
-                $program = get_post($program_id);
-                if ($program) {
-                    echo '<a href="' . get_edit_post_link($program_id) . '">' . esc_html($program->post_title) . '</a>';
+            // Meta key: spa_group_id (program ID)
+            $program_id = get_post_meta($post_id, 'spa_group_id', true);
+            
+            if (!empty($program_id)) {
+                $program = get_post(intval($program_id));
+                if ($program && $program->post_type === 'spa_group') {
+                    echo '<a href="' . esc_url(get_edit_post_link($program->ID)) . '">' . esc_html($program->post_title) . '</a>';
                 } else {
                     echo '<span style="color:#999;">—</span>';
                 }
@@ -68,12 +76,21 @@ function spa_registration_column_content($column, $post_id) {
             break;
 
         case 'parent':
-            if ($parent_id) {
-                $parent = get_userdata($parent_id);
+            // Meta key: parent_user_id
+            $parent_id = get_post_meta($post_id, 'parent_user_id', true);
+            
+            if (!empty($parent_id)) {
+                $parent = get_userdata(intval($parent_id));
                 if ($parent) {
                     $name = trim($parent->first_name . ' ' . $parent->last_name);
-                    if (empty($name)) $name = $parent->user_email;
-                    echo '<a href="' . esc_url(get_edit_user_link($parent_id)) . '">' . esc_html($name) . '</a>';
+                    if (empty($name)) {
+                        $name = $parent->display_name;
+                    }
+                    if (empty($name)) {
+                        $name = $parent->user_login;
+                    }
+                    $email = $parent->user_email ? ' (' . esc_html($parent->user_email) . ')' : '';
+                    echo '<a href="' . esc_url(get_edit_user_link($parent->ID)) . '">' . esc_html($name) . $email . '</a>';
                 } else {
                     echo '<span style="color:#999;">—</span>';
                 }
@@ -83,31 +100,76 @@ function spa_registration_column_content($column, $post_id) {
             break;
 
         case 'vs':
-            if ($client_id) {
-                $vs = get_user_meta($client_id, 'variabilny_symbol', true);
-                if ($vs) {
-                    echo '<strong style="font-family:monospace;font-size:13px;">' . esc_html($vs) . '</strong>';
-                } else {
-                    echo '<span style="color:#999;">—</span>';
-                }
+            // Meta key: variable_symbol (alebo vs - skúšame obidve)
+            $vs = get_post_meta($post_id, 'variable_symbol', true);
+            if (empty($vs)) {
+                $vs = get_post_meta($post_id, 'vs', true);
+            }
+            
+            if (!empty($vs)) {
+                echo '<strong style="font-family:monospace;font-size:13px;color:#0066FF;">' . esc_html($vs) . '</strong>';
+            } else {
+                echo '<span style="color:#999;">—</span>';
+            }
+            break;
+
+        case 'pin':
+            // Meta key: pin
+            $pin = get_post_meta($post_id, 'pin', true);
+            
+            if (!empty($pin)) {
+                echo '<strong style="font-family:monospace;font-size:13px;color:#FF9800;">' . esc_html($pin) . '</strong>';
+            } else {
+                echo '<span style="color:#999;">—</span>';
+            }
+            break;
+
+        case 'schedule':
+            // Meta keys: registration_day (napr. "tu") a registration_time (napr. "10:00")
+            $day = get_post_meta($post_id, 'registration_day', true);
+            $time = get_post_meta($post_id, 'registration_time', true);
+            
+            if (!empty($day) && !empty($time)) {
+                // Mapovanie krátkych kódov na slovenské dni
+                $days_map = array(
+                    'mo' => 'Pondelok',
+                    'tu' => 'Utorok',
+                    'we' => 'Streda',
+                    'th' => 'Štvrtok',
+                    'fr' => 'Piatok',
+                    'sa' => 'Sobota',
+                    'su' => 'Nedeľa'
+                );
+                
+                $day_name = isset($days_map[strtolower($day)]) ? $days_map[strtolower($day)] : $day;
+                echo esc_html($day_name . ' ' . $time);
             } else {
                 echo '<span style="color:#999;">—</span>';
             }
             break;
 
         case 'status':
+            // Meta key: status
+            $status = get_post_meta($post_id, 'status', true);
+            
+            if (empty($status)) {
+                $status = 'unknown';
+            }
+            
             $labels = array(
-                'pending'         => array('⏳ Čaká na schválenie', '#FFB81C', '#000'),
-                'awaiting_payment'=> array('💰 Čaká na platbu', '#FF9800', '#fff'),
-                'partially_paid'  => array('💳 Čiastočne zaplatené', '#2196F3', '#fff'),
-                'approved'        => array('✅ Schválené', '#0066FF', '#fff'),
-                'active'          => array('🟢 Aktívny', '#00C853', '#fff'),
-                'blocked'         => array('🚫 Blokované', '#9E9E9E', '#fff'),
-                'cancelled'       => array('❌ Zrušené', '#FF1439', '#fff'),
-                'completed'       => array('✔️ Zaregistrované', '#777', '#fff')
+                'pending'          => array('⏳ Čaká na schválenie', '#FFB81C', '#000'),
+                'awaiting_payment'  => array('💰 Čaká na platbu', '#FF9800', '#fff'),
+                'partially_paid'    => array('💳 Čiastočne zaplatené', '#2196F3', '#fff'),
+                'approved'          => array('✅ Schválené', '#0066FF', '#fff'),
+                'active'            => array('🟢 Aktívny', '#00C853', '#fff'),
+                'blocked'           => array('🚫 Blokované', '#9E9E9E', '#fff'),
+                'cancelled'         => array('❌ Zrušené', '#FF1439', '#fff'),
+                'completed'         => array('✔️ Zaregistrované', '#777', '#fff'),
+                'unknown'           => array('❓ Neznámy', '#999', '#fff')
             );
-            $label = isset($labels[$status]) ? $labels[$status] : array('❓ Neznámy', '#999', '#fff');
-            echo '<span style="background:' . $label[1] . ';color:' . $label[2] . ';padding:4px 10px;border-radius:4px;font-size:11px;white-space:nowrap;">' . $label[0] . '</span>';
+            
+            $label = isset($labels[$status]) ? $labels[$status] : $labels['unknown'];
+            echo '<span style="background:' . esc_attr($label[1]) . ';color:' . esc_attr($label[2]) . ';padding:4px 10px;border-radius:4px;font-size:11px;white-space:nowrap;display:inline-block;">' . esc_html($label[0]) . '</span>';
             break;
     }
 }
