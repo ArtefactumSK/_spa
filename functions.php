@@ -147,12 +147,17 @@ spa_load_module('import/spa-import-csv-v2.php');
  spa_load_module('pricing/spa-pricing-migration.php');
  spa_load_module('pricing/spa-pricing-helpers.php');
 
+
 /* ==========================
-   KRITICKÉ ADMIN MODULY (Musí byť aktívne!)
+   ADMIN MODULY - NOVO FRAGMENTOVANÉ
    ========================== */
-spa_load_module('spa-meta-boxes.php');      // ← Zakomentuj starý
-spa_load_module('spa-admin-columns.php');   // ← KRITICKÉ! (Admin columns)
-spa_load_module('spa-user-profile-fields.php'); 
+spa_load_module('admin/spa-registration-meta-box.php');
+spa_load_module('admin/spa-registration-admin-columns.php');
+spa_load_module('spa-user-profile-fields.php');
+
+// ZAKOMENTOVANÉ: Staré duplicitné súbory (duplicity s fragmentovanými modulmi)
+// spa_load_module('spa-meta-boxes.php');
+// spa_load_module('spa-admin-columns.php');
 
 
 /* ==========================
