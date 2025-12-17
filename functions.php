@@ -182,30 +182,3 @@ spa_load_module('spa-user-profile-fields.php');
 if (!file_exists(SPA_INCLUDES . 'registration/spa-registration-form.php')) {
     spa_load_module('spa-registration.php');
 }
-
-
-
-/* ==========================
-   TEST SPA plugin
-   ========================== */
-
-add_action('init', function () {
-    if (!isset($_GET['spa_test_registration'])) return;
-    if (!current_user_can('administrator')) return;
-
-    // Bezpečnostná poistka – ak service nie je načítaná, nezrúti web
-    if (!class_exists('SPA_Registration_Service')) {
-        wp_die('SPA_Registration_Service nie je načítaná. Skontroluj spa-core.php a includes/services/RegistrationService.php');
-    }
-
-    $result = SPA_Registration_Service::create([
-        'parent_id'  => 1,
-        'child_id'   => 1,
-        'program_id' => 1,
-    ]);
-
-    echo '<pre>';
-    var_dump($result);
-    echo '</pre>';
-    exit;
-});
