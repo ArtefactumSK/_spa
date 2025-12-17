@@ -183,19 +183,29 @@ if (!file_exists(SPA_INCLUDES . 'registration/spa-registration-form.php')) {
     spa_load_module('spa-registration.php');
 }
 
+
+
+/* ==========================
+   TEST SPA plugin
+   ========================== */
+
 add_action('init', function () {
-    if (!current_user_can('administrator')) {
-        return;
+    if (!isset($_GET['spa_test_registration'])) return;
+    if (!current_user_can('administrator')) return;
+
+    // Bezpečnostná poistka – ak service nie je načítaná, nezrúti web
+    if (!class_exists('SPA_Registration_Service')) {
+        wp_die('SPA_Registration_Service nie je načítaná. Skontroluj spa-core.php a includes/services/RegistrationService.php');
     }
 
-    if (isset($_GET['spa_test_registration'])) {
-        $result = SPA_Registration_Service::create([
-            'parent_id'  => 1,
-            'child_id'   => 1,
-            'program_id' => 1,
-        ]);
+    $result = SPA_Registration_Service::create([
+        'parent_id'  => 1,
+        'child_id'   => 1,
+        'program_id' => 1,
+    ]);
 
-        var_dump($result);
-        exit;
-    }
+    echo '<pre>';
+    var_dump($result);
+    echo '</pre>';
+    exit;
 });
