@@ -182,3 +182,20 @@ spa_load_module('spa-user-profile-fields.php');
 if (!file_exists(SPA_INCLUDES . 'registration/spa-registration-form.php')) {
     spa_load_module('spa-registration.php');
 }
+
+add_action('init', function () {
+    if (!current_user_can('administrator')) {
+        return;
+    }
+
+    if (isset($_GET['spa_test_registration'])) {
+        $result = SPA_Registration_Service::create([
+            'parent_id'  => 1,
+            'child_id'   => 1,
+            'program_id' => 1,
+        ]);
+
+        var_dump($result);
+        exit;
+    }
+});
