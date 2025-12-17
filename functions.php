@@ -182,31 +182,3 @@ spa_load_module('spa-user-profile-fields.php');
 if (!file_exists(SPA_INCLUDES . 'registration/spa-registration-form.php')) {
     spa_load_module('spa-registration.php');
 }
-
-
-/* ==========================
-   TEST
-   ========================== */
-add_action('init', function () {
-    if (!current_user_can('administrator')) return;
-
-    $q = new WP_Query([
-        'post_type'      => 'spa_registration',
-        'posts_per_page' => 1,
-        'orderby'        => 'date',
-        'order'          => 'DESC',
-    ]);
-
-    echo '<pre>';
-    if ($q->have_posts()) {
-        $q->the_post();
-        echo 'POST ID: ' . get_the_ID() . PHP_EOL;
-        echo 'META _spa_registration_id: ';
-        var_dump(get_post_meta(get_the_ID(), '_spa_registration_id', true));
-    } else {
-        echo 'ŽIADNY CPT spa_registration';
-    }
-    echo '</pre>';
-    wp_reset_postdata();
-    exit;
-});
