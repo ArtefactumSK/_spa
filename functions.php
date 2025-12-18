@@ -182,3 +182,42 @@ spa_load_module('spa-user-profile-fields.php');
 if (!file_exists(SPA_INCLUDES . 'registration/spa-registration-form.php')) {
     spa_load_module('spa-registration.php');
 }
+
+/**
+ * Cleanup script - Vymaž staru spa_features a reinicializuj
+ * 
+ * Spusti v WordPress admin → Code Snippets
+ * ALEBO skopíruj do theme functions.php a aktivuj theme
+ */
+
+// Vymaž stara spa_features
+delete_option('spa_features');
+
+// Skontroluj
+$check = get_option('spa_features');
+if (!$check) {
+    echo '<div style="padding:20px;background:#d4edda;border:1px solid #c3e6cb;color:#155724;">
+        ✅ Stara spa_features bola vymazana.
+    </div>';
+} else {
+    echo '<div style="padding:20px;background:#f8d7da;border:1px solid #f5c6cb;color:#721c24;">
+        ❌ Vymázanie zlyhalo.
+    </div>';
+}
+
+// Znova inicializuj
+spa_init_feature_flags();
+
+// Skontroluj novu hodnotu
+$new_options = get_option('spa_features');
+echo '<div style="padding:20px;background:#fff3cd;border:1px solid #ffeaa7;margin-top:10px;">
+    <strong>Nove nastavenie:</strong><br>
+    <pre>' . htmlspecialchars(json_encode($new_options, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') . '</pre>
+</div>';
+
+// Skontroluj funkciu
+echo '<div style="padding:20px;background:#cce5ff;border:1px solid #b6d4fe;margin-top:10px;">
+    <strong>Test spa_feature_enabled():</strong><br>
+    attendance_stats: ' . (spa_feature_enabled('attendance_stats') ? '<span style="color:red;">TRUE ❌</span>' : '<span style="color:green;">FALSE ✅</span>') . '<br>
+    payments_extended: ' . (spa_feature_enabled('payments_extended') ? '<span style="color:green;">TRUE ✅</span>' : '<span style="color:red;">FALSE ❌</span>') . '
+</div>';
