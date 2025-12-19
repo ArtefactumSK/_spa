@@ -3,10 +3,9 @@
  * Theme Name: Blocksy Child - Samuel Piasecký ACADEMY
  * Description: Child theme pre Samuel Piasecký ACADEMY
  * Author: Artefactum
- * Version: 26.1.5-STABLE
+ * Version: 27.0.0-REFACTOR
  * 
- * POZNÁMKA: Toto je MINIMÁLNA STABILNÁ konfigurácia
- * Zakomentované moduly budú pridané v nasledujúcich iteráciách
+ * POZNÁMKA: Zakomentované moduly kolídujú s spa-core pluginom
  */
 
 if (!defined('ABSPATH')) {
@@ -31,7 +30,7 @@ add_action('admin_init', function() {
 /* ==========================
    KONŠTANTY
    ========================== */
-define('SPA_VERSION', '26.1.5');
+define('SPA_VERSION', '27.0.0');
 define('SPA_PATH', get_stylesheet_directory());
 define('SPA_URL', get_stylesheet_directory_uri());
 define('SPA_INCLUDES', SPA_PATH . '/includes/');
@@ -99,76 +98,63 @@ function spa_load_module($file) {
 }
 
 /* ==========================
-   PORADIE NAČÍTANIA - MINIMÁLNA STABILNÁ KONFIGURÁCIA
+   ⚠️ ZAKOMENTOVANÉ KVÔLI KOLÍZIÁM SO SPA-CORE PLUGINOM
    
-   ✅ HOTOVÉ A AKTÍVNE:
-   - FÁZA 0: Core (constants, roles, filters)
-   - FÁZA 1-2: CPT + Taxonomies
-   - FÁZA 3: User fields + helpers
-   - FÁZA 4: Import CSV v2
+   Tieto moduly sú NAHRADENÉ v spa-core plugine:
    
-   ❌ ZAKOMENTOVANÉ (Problematické/budúcnosť):
-   - Staré admin moduly (duplicity, závislosti)
-   - Registračné notifikácie (duplicity)
+   ❌ FÁZA 0: Core (duplicity rolí, filters)
+   ❌ FÁZA 1-2: CPT (spa_group → spa_program, spa_place → spa_venue)
+   ❌ FÁZA 4: Import CSV (používa staré CPT)
+   
    ========================== */
 
-// FÁZA 0: CORE (Povinné)
-spa_load_module('core/spa-constants.php');
-spa_load_module('core/spa-roles.php');
-spa_load_module('core/spa-filters-hooks.php');
+// ❌ ZAKOMENTOVANÉ: Core (rolé a filters sú v spa-core/includes/roles/roles.php)
+// spa_load_module('core/spa-constants.php');
+// spa_load_module('core/spa-roles.php');  // ← DUPLICITA s spa-core/includes/roles/roles.php
+// spa_load_module('core/spa-filters-hooks.php');
 
-// FÁZA 1-2: CPT + TAXONOMIES (Povinné)
-spa_load_module('cpt/spa-cpt-groups.php');
-spa_load_module('cpt/spa-cpt-registration.php');
-spa_load_module('cpt/spa-cpt-place.php');
-spa_load_module('cpt/spa-cpt-event.php');
-spa_load_module('cpt/spa-cpt-attendance.php');
-spa_load_module('helpers/spa-taxonomies.php');
+// ❌ ZAKOMENTOVANÉ: CPT (kolízia s spa-core/includes/cpt/)
+// spa_load_module('cpt/spa-cpt-groups.php');  // ← KOLÍZIA: spa_group vs spa_program
+// spa_load_module('cpt/spa-cpt-place.php');   // ← KOLÍZIA: spa_place vs spa_venue
+// spa_load_module('cpt/spa-cpt-registration.php');  // ← MOŽNÁ KOLÍZIA
+// spa_load_module('cpt/spa-cpt-event.php');
+// spa_load_module('cpt/spa-cpt-attendance.php');
+// spa_load_module('helpers/spa-taxonomies.php');
 
-// FÁZA 3: USER FIELDS + HELPERS
+// ❌ ZAKOMENTOVANÉ: Import CSV (používa starý spa_group)
+// spa_load_module('import/spa-import-csv-v2.php');
+
+/* ==========================
+   ✅ AKTÍVNE MODULY (Bezpečné)
+   ========================== */
+
+// USER FIELDS + HELPERS (OK - neprekrývajú sa s pluginom)
 spa_load_module('user/spa-user-fields.php');
 spa_load_module('user/spa-user-parents.php');
 spa_load_module('user/spa-user-children.php');
 spa_load_module('user/spa-user-clients.php');
 
-// FÁZA 3+: REGISTRÁCIA (Fragmentované)
-// Poznámka: Helpers a notifications sú zakomentované (duplicity s user modulmi)
+// REGISTRÁCIA (Fragmentované - zatiaľ ponechaj)
+// Poznámka: Helpers a notifications sú zakomentované (duplicity)
 // spa_load_module('registration/spa-registration-helpers.php');
 // spa_load_module('registration/spa-registration-notifications.php');
 spa_load_module('registration/spa-registration-form.php');
 
-spa_load_module('admin/spa-registration-meta-box.php');
-spa_load_module('admin/spa-registration-admin-columns.php');
-
-// FÁZA 4: IMPORT CSV V2
-spa_load_module('import/spa-import-csv-v2.php');
-
-// FÁZA 4+: PRICING
- spa_load_module('pricing/spa-pricing-migration.php');
- spa_load_module('pricing/spa-pricing-helpers.php');
-
-
-/* ==========================
-   ADMIN MODULY - NOVO FRAGMENTOVANÉ
-   ========================== */
+// ADMIN MODULY (Meta boxy pre staré CPT - zatiaľ ponechaj)
 spa_load_module('admin/spa-registration-meta-box.php');
 spa_load_module('admin/spa-registration-admin-columns.php');
 spa_load_module('spa-user-profile-fields.php');
 
-// ZAKOMENTOVANÉ: Staré duplicitné súbory (duplicity s fragmentovanými modulmi)
-// spa_load_module('spa-meta-boxes.php');
-// spa_load_module('spa-admin-columns.php');
-
+// PRICING (OK - neprekrýva sa s pluginom)
+spa_load_module('pricing/spa-pricing-migration.php');
+spa_load_module('pricing/spa-pricing-helpers.php');
 
 /* ==========================
-   ZAKOMENTOVANÉ MODULY (Budúce alebo problematické)
-   
-   Staré admin moduly majú závislosti a duplicity.
-   Budú zrefaktorované v nasledujúcich iteráciách.
+   ❌ ZAKOMENTOVANÉ: Staré moduly (duplicity)
    ========================== */
 
-// spa_load_module('spa-admin-columns.php');
 // spa_load_module('spa-meta-boxes.php');
+// spa_load_module('spa-admin-columns.php');
 // spa_load_module('spa-shortcodes.php');
 // spa_load_module('spa-widgets.php');
 // spa_load_module('spa-calendar.php');
@@ -177,47 +163,10 @@ spa_load_module('spa-user-profile-fields.php');
 // spa_load_module('spa-login-popup.php');
 
 /* ==========================
-   FALLBACK: Staré registrácia (AK fragmentovaná neexistuje)
+   ❌ CLEANUP SCRIPT ZMAZANÝ
+   (Spúšťal sa pri každom načítaní stránky - nebezpečné)
    ========================== */
-if (!file_exists(SPA_INCLUDES . 'registration/spa-registration-form.php')) {
-    spa_load_module('spa-registration.php');
-}
 
-/**
- * Cleanup script - Vymaž staru spa_features a reinicializuj
- * 
- * Spusti v WordPress admin → Code Snippets
- * ALEBO skopíruj do theme functions.php a aktivuj theme
- */
-
-// Vymaž stara spa_features
-delete_option('spa_features');
-
-// Skontroluj
-$check = get_option('spa_features');
-if (!$check) {
-    echo '<div style="padding:20px;background:#d4edda;border:1px solid #c3e6cb;color:#155724;">
-        ✅ Stara spa_features bola vymazana.
-    </div>';
-} else {
-    echo '<div style="padding:20px;background:#f8d7da;border:1px solid #f5c6cb;color:#721c24;">
-        ❌ Vymázanie zlyhalo.
-    </div>';
-}
-
-// Znova inicializuj
-spa_init_feature_flags();
-
-// Skontroluj novu hodnotu
-$new_options = get_option('spa_features');
-echo '<div style="padding:20px;background:#fff3cd;border:1px solid #ffeaa7;margin-top:10px;">
-    <strong>Nove nastavenie:</strong><br>
-    <pre>' . htmlspecialchars(json_encode($new_options, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') . '</pre>
-</div>';
-
-// Skontroluj funkciu
-echo '<div style="padding:20px;background:#cce5ff;border:1px solid #b6d4fe;margin-top:10px;">
-    <strong>Test spa_feature_enabled():</strong><br>
-    attendance_stats: ' . (spa_feature_enabled('attendance_stats') ? '<span style="color:red;">TRUE ❌</span>' : '<span style="color:green;">FALSE ✅</span>') . '<br>
-    payments_extended: ' . (spa_feature_enabled('payments_extended') ? '<span style="color:green;">TRUE ✅</span>' : '<span style="color:red;">FALSE ❌</span>') . '
-</div>';
+// Ak potrebuješ reinicializovať spa_features, použi WP CLI:
+// wp option delete spa_features
+// alebo Code Snippets (jednorazovo)
